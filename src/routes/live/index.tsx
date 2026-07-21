@@ -133,6 +133,16 @@ function LiveDashboard() {
 
   const shortestSalons = [...salons].sort((a, b) => a.waitTime - b.waitTime).slice(0, 4);
 
+  const [selectedLocality, setSelectedLocality] = useState("Patia, Bhubaneswar");
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const localities = [
+    "Patia, Bhubaneswar",
+    "Saheed Nagar, Bhubaneswar",
+    "Jaydev Vihar, Bhubaneswar",
+    "Janpath, Bhubaneswar",
+    "KIIT Square, Bhubaneswar"
+  ];
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C1613] font-sans pb-24">
       {/* ─── Top Brand Navbar ─── */}
@@ -143,11 +153,14 @@ function LiveDashboard() {
           </Link>
 
           {/* Location Delivery Selector Pill */}
-          <div className="flex items-center gap-2.5 bg-[#FAF7F2] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#1C1613] shadow-xs">
+          <button
+            onClick={() => setShowLocationModal(true)}
+            className="flex items-center gap-2.5 bg-[#FAF7F2] hover:bg-[#FAF2EA] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#1C1613] shadow-xs cursor-pointer transition-colors"
+          >
             <MapPin className="w-3.5 h-3.5 text-[#7A4B29]" />
-            <span className="truncate max-w-[140px] sm:max-w-[220px]">Patia, Bhubaneswar</span>
-            <span className="text-[10px] text-[#7A4B29] bg-[#7A4B29]/10 px-2 py-0.5 rounded-full font-black uppercase">GPS</span>
-          </div>
+            <span className="truncate max-w-[140px] sm:max-w-[220px]">{selectedLocality}</span>
+            <span className="text-[10px] text-[#7A4B29] bg-[#7A4B29]/10 px-2 py-0.5 rounded-full font-black uppercase">Change</span>
+          </button>
 
           <div className="hidden sm:flex items-center gap-2 bg-[#7A4B29] text-white px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide">
             <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
@@ -177,11 +190,11 @@ function LiveDashboard() {
           )}
         </div>
 
-        {/* ─── Live Database Status Ticker Banner ─── */}
+        {/* ─── Live Status Ticker Banner ─── */}
         <div className="flex items-center gap-2.5 bg-[#FAF2EA] border border-[#E8D6C5] px-4 py-2.5 rounded-2xl mb-6 text-xs text-[#1C1613]">
           <span className="w-2 h-2 rounded-full bg-[#7A4B29] animate-pulse" />
           <span>
-            <strong className="font-extrabold text-[#7A4B29]">{salons.length} Live Salons</strong> synced directly from database in Bhubaneswar
+            🔥 <strong className="font-extrabold text-[#7A4B29]">Real-time chair updates</strong> • {selectedLocality}
           </span>
         </div>
 
@@ -427,6 +440,43 @@ function LiveDashboard() {
             >
               Join Live Queue Now
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Location Selection Modal ─── */}
+      {showLocationModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative">
+            <button
+              onClick={() => setShowLocationModal(false)}
+              className="absolute top-4 right-4 p-2 text-[#9C948D] hover:text-[#1C1613]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-extrabold text-[#1C1613] mb-4">Select Location</h3>
+
+            <div className="space-y-2 mb-4">
+              {localities.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setSelectedLocality(item);
+                    setShowLocationModal(false);
+                  }}
+                  className={cn(
+                    "w-full text-left p-3 rounded-xl border text-xs font-extrabold transition-all flex items-center justify-between",
+                    selectedLocality === item
+                      ? "bg-[#7A4B29] text-white border-[#7A4B29]"
+                      : "bg-[#FAF7F2] text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF2EA]"
+                  )}
+                >
+                  <span>📍 {item}</span>
+                  {selectedLocality === item && <span>✓</span>}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

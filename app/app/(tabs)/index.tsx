@@ -18,6 +18,7 @@ import { getSalons } from '../../src/api/salons';
 import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme';
 import { SneprLogo } from '../../src/components/SneprLogo';
+import { SkeletonHomeScreen } from '../../src/components/SkeletonHomeScreen';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - theme.spacing.lg * 2 - theme.spacing.md) / 2;
@@ -96,6 +97,9 @@ export default function ExploreScreen() {
     },
   });
 
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const localities = ['Patia, Bhubaneswar', 'Saheed Nagar, Bhubaneswar', 'Jaydev Vihar, Bhubaneswar', 'Janpath, Bhubaneswar', 'KIIT Square, Bhubaneswar'];
+
   // Location Access Handler
   const requestLocation = async () => {
     setIsLocating(true);
@@ -104,25 +108,26 @@ export default function ExploreScreen() {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            setLocationName(`Near ${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`);
+            setLocationName('GPS Location');
             setIsLocating(false);
           },
           () => {
             setLocationName('Patia, Bhubaneswar');
             setIsLocating(false);
-          }
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
         );
       } else {
         const Location = require('expo-location');
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Denied', 'Location permission is required.');
+          setLocationName('Patia, Bhubaneswar');
           setIsLocating(false);
           return;
         }
         let loc = await Location.getCurrentPositionAsync({});
         setUserCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        setLocationName('Detected Location');
+        setLocationName('GPS Location');
         setIsLocating(false);
       }
     } catch (e) {
@@ -188,12 +193,7 @@ export default function ExploreScreen() {
   const featuredSalons = [...salonList].sort((a: any, b: any) => a.waitTime - b.waitTime).slice(0, 4);
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={{ marginTop: 12, color: theme.colors.textMuted, fontSize: 14 }}>Connecting to live database...</Text>
-      </View>
-    );
+    return <SkeletonHomeScreen />;
   }
 
   return (
@@ -216,7 +216,7 @@ export default function ExploreScreen() {
 
         {/* ─── Location Bar ─── */}
         <View style={styles.locationBarContainer}>
-          <TouchableOpacity style={styles.locationSelectorFull} onPress={requestLocation} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.locationSelectorFull} onPress={() => setLocationModalVisible(true)} activeOpacity={0.8}>
             <View style={styles.locationPinBadge}>
               <Text style={styles.pinIcon}>📍</Text>
             </View>
@@ -253,11 +253,11 @@ export default function ExploreScreen() {
           </View>
         </View>
 
-        {/* ─── Live Database Status Ticker ─── */}
+        {/* ─── Live Queue Status Ticker ─── */}
         <View style={styles.tickerBanner}>
           <View style={styles.tickerLiveDot} />
           <Text style={styles.tickerText}>
-            <Text style={styles.tickerBold}>{salonList.length} Live Salons</Text> synced directly from database
+            🔥 <Text style={styles.tickerBold}>Real-time chair updates</Text> • Patia, Bhubaneswar
           </Text>
         </View>
 
@@ -526,6 +526,69 @@ export default function ExploreScreen() {
                 </TouchableOpacity>
               </>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ─── Location Selector Modal ─── */}
+      <Modal
+        visible={locationModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setLocationModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Delivery Location</Text>
+              <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
+                <Text style={styles.closeBtn}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                backgroundColor: theme.colors.primary,
+                padding: 14,
+                borderRadius: 14,
+                marginBottom: 16,
+                gap: 8,
+              }}
+              onPress={() => {
+                setLocationModalVisible(false);
+                requestLocation();
+              }}
+            >
+              <Text style={{ fontSize: 16, color: '#FFF' }}>🎯</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFF' }}>
+                Use Current GPS Location
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={{ fontSize: 12, fontWeight: '800', color: theme.colors.textMuted, marginBottom: 8 }}>
+              POPULAR LOCALITIES IN BHUBANESWAR
+            </Text>
+
+            {localities.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={{
+                  paddingVertical: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#F5EDE4',
+                }}
+                onPress={() => {
+                  setLocationName(item);
+                  setLocationModalVisible(false);
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.colors.text }}>
+                  📍 {item}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </Modal>

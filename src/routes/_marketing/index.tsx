@@ -183,8 +183,9 @@ function HeroQueueCard() {
       </div>
 
       {/* Floating pill */}
-      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-card">
-        Synced with Live DB
+      <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-card flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#7A4B29] animate-pulse" />
+        <span>Updated 2s ago</span>
       </div>
     </div>
   );
