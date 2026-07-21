@@ -119,7 +119,7 @@ function LoginScreen({ username, setUsername, password, setPassword, error, onSu
           <div className="space-y-5">
             <div>
               <label className="block text-[11px] font-bold text-[#6E6761] uppercase tracking-wider mb-2">Username</label>
-              <input type="text" placeholder="snepr@2026" value={username} onChange={e => setUsername(e.target.value)}
+              <input type="text" placeholder="Enter username" value={username} onChange={e => setUsername(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && onSubmit()}
                 className="w-full px-4 py-3.5 rounded-xl bg-white border border-[#E8E2D9] focus:ring-2 focus:ring-[#7A4B29]/30 focus:border-[#7A4B29] transition-all text-[14px] outline-none text-[#1C1613]" />
             </div>
