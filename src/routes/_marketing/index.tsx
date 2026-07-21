@@ -36,11 +36,12 @@ function Hero() {
             <span className="live-dot" />
             <span>Live in 240+ salons</span>
           </div>
-          <h1 className="font-display text-[44px] font-bold leading-[0.95] tracking-tight text-ink sm:text-[64px] md:text-[76px]">
+          <div className="font-display text-[44px] font-bold leading-[0.95] tracking-tight text-ink sm:text-[64px] md:text-[76px]">
             Know before
             <br />
             you go.
-          </h1>
+          </div>
+          <h1 className="sr-only">Skip the Salon Wait: Live Queue & Wait Times</h1>
           <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink-soft sm:text-[18px]">
             Never wait at a salon again. See live queues, join from your phone,
             and walk straight into the chair.
@@ -181,11 +182,12 @@ function HowItWorks() {
           <div className="mb-3 text-[12px] font-semibold uppercase tracking-widest text-primary">
             How it works
           </div>
-          <h2 className="font-display text-[36px] font-bold leading-[1] tracking-tight text-ink sm:text-[52px]">
+          <h2 className="sr-only">How Our Salon Queue App Works</h2>
+          <div className="font-display text-[36px] font-bold leading-[1] tracking-tight text-ink sm:text-[52px]">
             Three taps between
             <br />
             you and the chair.
-          </h2>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3 md:gap-6">
@@ -309,11 +311,12 @@ function LiveShowcase() {
             <div className="mb-3 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-widest text-primary">
               <span className="live-dot" /> Live right now
             </div>
-            <h2 className="font-display text-[36px] font-bold leading-[1] tracking-tight text-ink sm:text-[52px]">
+            <h2 className="sr-only">Live Barbershop & Salon Wait Times</h2>
+            <div className="font-display text-[36px] font-bold leading-[1] tracking-tight text-ink sm:text-[52px]">
               This is your salon,
               <br />
               in real time.
-            </h2>
+            </div>
           </div>
         </div>
 
@@ -421,22 +424,23 @@ function ForOwners() {
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-ink/10 px-3 py-1.5 text-[12px] font-semibold text-ink">
               <Sparkles className="h-3.5 w-3.5" /> For salon owners
             </div>
-            <h2 className="font-display text-[38px] font-bold leading-[0.98] tracking-tight text-ink sm:text-[56px]">
+            <h2 className="sr-only">Snepr For Salon Owners: Fill Every Chair</h2>
+            <div className="font-display text-[38px] font-bold leading-[0.98] tracking-tight text-ink sm:text-[56px]">
               One tap to fill
               <br />
               every empty chair.
-            </h2>
+            </div>
             <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink/80">
               Update chair status in a single tap. We route ready-to-pay customers
               straight to you. Commission only - zero setup, zero monthly fees.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link to="/claim" className="inline-flex h-13 items-center gap-2 rounded-2xl bg-ink px-6 py-3.5 text-[15px] font-bold text-white press press-active hover:bg-ink/90">
+              <a href="mailto:support@snepr.in" className="inline-flex h-13 items-center gap-2 rounded-2xl bg-ink px-6 py-3.5 text-[15px] font-bold text-white press press-active hover:bg-ink/90">
                 List your salon
                 <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link to="/terms-of-service" className="inline-flex h-13 items-center gap-2 rounded-2xl border border-ink/25 bg-transparent px-5 py-3.5 text-[14px] font-semibold text-ink press press-active hover:bg-ink/5">
+              </a>
+              <Link to="/app" className="inline-flex h-13 items-center gap-2 rounded-2xl border border-ink/25 bg-transparent px-5 py-3.5 text-[14px] font-semibold text-ink press press-active hover:bg-ink/5">
                 See partner terms
               </Link>
             </div>

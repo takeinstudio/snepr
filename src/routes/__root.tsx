@@ -79,26 +79,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
       { name: "theme-color", content: "#00C853" },
-      { title: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
+      { title: "Live Salon Queue App | Snepr" },
       {
         name: "description",
         content:
-          "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn.",
+          "Skip the waiting room. See live salon queues, join from your phone, and walk straight into the chair. 100% free for customers.",
       },
       { name: "author", content: "Snepr" },
       { property: "og:site_name", content: "Snepr" },
-      { property: "og:title", content: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
+      { property: "og:title", content: "Live Salon Queue App | Snepr" },
       {
         property: "og:description",
         content:
-          "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn.",
+          "Skip the waiting room. See live salon queues, join from your phone, and walk straight into the chair. 100% free for customers.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://snepr.in" },
       { property: "og:image", content: "https://snepr.in/android-chrome-512x512.png" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
-      { name: "twitter:description", content: "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn." },
+      { name: "twitter:title", content: "Live Salon Queue App | Snepr" },
+      { name: "twitter:description", content: "Skip the waiting room. See live salon queues, join from your phone, and walk straight into the chair. 100% free for customers." },
       { name: "twitter:image", content: "https://snepr.in/android-chrome-512x512.png" },
     ],
     links: [
@@ -126,16 +126,32 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          "name": "Snepr",
-          "operatingSystem": "Any",
-          "applicationCategory": "LifestyleApplication",
-          "description": "Live salon wait times and queue joining application.",
-          "offers": {
-            "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
-          }
+          "@graph": [
+            {
+              "@type": "SoftwareApplication",
+              "name": "Snepr",
+              "applicationCategory": "LifestyleApplication",
+              "operatingSystem": "Android, iOS, Web",
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "INR"
+              },
+              "description": "Live salon wait times and walk-in queue management application.",
+              "url": "https://snepr.in"
+            },
+            {
+              "@type": "Organization",
+              "name": "Snepr",
+              "url": "https://snepr.in",
+              "logo": "https://snepr.in/android-chrome-512x512.png",
+              "contactPoint": {
+                "@type": "ContactPoint",
+                "contactType": "customer support",
+                "email": "support@snepr.in"
+              }
+            }
+          ]
         }),
       }
     ],
