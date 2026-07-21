@@ -7,7 +7,8 @@ import {
   Scripts,
   Link,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { type ReactNode, useState, useEffect } from "react";
+import { SneprWordmark } from "@/components/SneprWordmark";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "sonner";
@@ -180,6 +181,22 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const [showSplash, setShowSplash] = useState(true);
+  const [fadeSplash, setFadeSplash] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      setFadeSplash(true);
+    }, 2000); // Wait 2s before fading
+    const t2 = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500); // Remove from DOM after 2.5s
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -188,6 +205,17 @@ function RootComponent() {
           <Outlet />
         </main>
       </div>
+
+      {showSplash && (
+        <div 
+          className={`fixed inset-0 z-[9999] bg-[#1C1613] flex items-center justify-center transition-opacity duration-500 ${fadeSplash ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <div className="flex flex-col items-center gap-6 animate-pulse">
+            <SneprWordmark height={48} className="text-[#FAF8F5]" />
+          </div>
+        </div>
+      )}
+
       <Toaster position="bottom-center" />
     </QueryClientProvider>
   );

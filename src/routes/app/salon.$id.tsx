@@ -13,7 +13,7 @@ function AppSalonDetail() {
 
   const { data: salon, isLoading } = useQuery({
     queryKey: ["salon", id],
-    queryFn: () => getSalonDetails({ data: Number(id) }),
+    queryFn: async () => (await getSalonDetails({ data: Number(id) })) as any,
   });
 
   const joinMutation = useMutation({

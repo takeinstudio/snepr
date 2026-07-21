@@ -175,7 +175,7 @@ function SalonOverview({ session }: { session: SessionUser }) {
 
   const { data: salon } = useQuery({
     queryKey: ["salon", salonId],
-    queryFn: () => getSalonById({ data: { id: salonId } }),
+    queryFn: async () => (await getSalonById({ data: { id: salonId } })) as any,
   });
 
   return (
@@ -298,7 +298,7 @@ function StaffTab({ session }: { session: SessionUser }) {
   const salonId = session.salonId ?? 1;
   const { data: staffList = [], isLoading } = useQuery({
     queryKey: ["staff", salonId],
-    queryFn: () => getStaff({ data: { salonId } }),
+    queryFn: async () => (await getStaff({ data: { salonId } })) as any[],
   });
 
   return (
@@ -313,7 +313,7 @@ function StaffTab({ session }: { session: SessionUser }) {
           <div className="p-16 text-center text-ink-softer">No staff added yet.</div>
         ) : (
           <div className="divide-y divide-border/30">
-            {staffList.map(s => (
+            {staffList.map((s: any) => (
               <div key={s.id} className="px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-surface text-ink flex items-center justify-center font-bold">

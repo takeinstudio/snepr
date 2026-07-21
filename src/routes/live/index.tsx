@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getSalons } from "../../backend/functions/salons";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   Search, SlidersHorizontal, MapPin, ChevronDown, Smartphone
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
+import { useLocation } from "../../hooks/useLocation";
+import { calculateDistance, formatDistance } from "../../lib/distance";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -34,6 +36,9 @@ interface Salon {
   reviewCount: number | null;
   queueStatus: QueueStatus;
   waitTime: number;
+  latitude: string | null;
+  longitude: string | null;
+  distanceKm?: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -61,23 +66,37 @@ function useSalons() {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { location } = useLocation();
 
   const load = async () => {
     try {
       const r = await fetch("/api/salons");
       if (!r.ok) throw new Error("Failed to load");
-      const data = await r.json();
+      let data = await r.json();
       setSalons(data);
       setError(null);
     } catch (e: any) {
       // Fallback to server function if API route fails (e.g. static export)
       try {
         const data = await getSalons({ data: {} });
-        const salonsWithStatus = data.map((salon: any) => ({
-          ...salon,
-          queueStatus: salon.id % 3 === 0 ? "busy" : salon.id % 2 === 0 ? "finishing" : "available",
-          waitTime: salon.id * 5 + 5,
-        }));
+        const salonsWithStatus = (data as any[]).map((salon: any) => {
+          let dist: number | undefined;
+          if (location && salon.latitude && salon.longitude) {
+            dist = calculateDistance(
+              location.latitude, location.longitude,
+              parseFloat(salon.latitude), parseFloat(salon.longitude)
+            );
+          }
+
+          // If the API failed but server fn succeeded, it won't have waitTime by default 
+          // unless we update getSalons or just default to 0 for fallback
+          return {
+            ...salon,
+            queueStatus: salon.queueStatus || "available",
+            waitTime: salon.waitTime || 0,
+            distanceKm: dist,
+          };
+        });
         setSalons(salonsWithStatus);
         setError(null);
       } catch {
@@ -88,7 +107,7 @@ function useSalons() {
     }
   };
 
-  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [location]);
 
   return { salons, loading, error, reload: load };
 }
@@ -111,6 +130,11 @@ function LiveDashboard() {
     .sort((a, b) => {
       if (sort === "wait") return a.waitTime - b.waitTime;
       if (sort === "rating") return parseFloat(b.rating ?? "0") - parseFloat(a.rating ?? "0");
+      if (sort === "distance") {
+        if (a.distanceKm !== undefined && b.distanceKm !== undefined) return a.distanceKm - b.distanceKm;
+        if (a.distanceKm !== undefined) return -1;
+        if (b.distanceKm !== undefined) return 1;
+      }
       return 0;
     });
 
@@ -141,7 +165,7 @@ function LiveDashboard() {
               <MapPin className="w-3 h-3" /> Location
             </div>
             <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F7F7F8] text-left hover:bg-[#F0F0F2] transition-colors">
-              <span className="text-[13.5px] font-semibold text-[#0A0A0A] truncate">Patia, Bhubaneswar</span>
+              <span className="text-[13.5px] font-semibold text-[#0A0A0A] truncate">Current Location</span>
               <ChevronDown className="w-4 h-4 text-[#9CA3AF] shrink-0" />
             </button>
           </div>
@@ -191,7 +215,7 @@ function LiveDashboard() {
             <div className="flex items-center justify-between mb-3">
               <Link to="/"><SneprWordmark height={22} className="text-[#0A0A0A]" /></Link>
               <button className="flex items-center gap-1.5 text-[13px] font-semibold text-[#6B7280]">
-                <MapPin className="w-3.5 h-3.5" /> Patia, BBSR <ChevronDown className="w-3.5 h-3.5" />
+                <MapPin className="w-3.5 h-3.5" /> Near Me <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>
             {/* Mobile filter chips */}
@@ -344,19 +368,22 @@ function FeaturedCard({ salon }: { salon: Salon }) {
       <div className="text-[12px] font-semibold text-[#6B7280] mb-3">min wait</div>
 
       <div className="text-[13px] font-bold text-[#0A0A0A] truncate">{salon.name}</div>
-      <div className="text-[11px] text-[#9CA3AF] mt-0.5 truncate">{salon.category ?? "Salon"}{salon.rating ? ` · ${salon.rating}★` : ""}</div>
+      <div className="text-[11px] text-[#9CA3AF] mt-0.5 truncate">
+        {salon.category ?? "Salon"}
+        {salon.distanceKm !== undefined ? ` · ${formatDistance(salon.distanceKm)}` : ""}
+      </div>
     </Link>
   );
 }
 
 // ─── Grid Card ────────────────────────────────────────────────────────────────
 
-function SalonGridCard({ salon }: { salon: Salon }) {
+function SalonGridCard({ salon }: { salon: any }) {
   const dotColor = statusColor(salon.queueStatus);
 
   return (
     <Link
-      to={`/live/salon/${salon.id}`}
+      to={`/live/salon/${salon.id}` as any}
       className="group bg-white rounded-[16px] border border-[#EBEBEC] p-4 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3">
@@ -367,7 +394,15 @@ function SalonGridCard({ salon }: { salon: Salon }) {
       </div>
 
       <div className="text-[14px] font-bold text-[#0A0A0A] leading-snug line-clamp-2 mb-1">{salon.name}</div>
-      <div className="text-[11.5px] text-[#9CA3AF] mb-3 truncate">{salon.category ?? "Salon"}</div>
+      <div className="flex items-center gap-1.5 text-[11.5px] text-[#9CA3AF] mb-3 truncate">
+        {salon.category ?? "Salon"}
+        {salon.distanceKm !== undefined && (
+          <>
+            <span className="w-1 h-1 rounded-full bg-[#D1D5DB]" />
+            <span className="font-semibold text-[#00C853]">{formatDistance(salon.distanceKm)} away</span>
+          </>
+        )}
+      </div>
 
       <div className="flex items-baseline gap-1 mt-auto">
         <span className="text-[26px] font-black text-[#0A0A0A] font-mono leading-none">{salon.waitTime}</span>

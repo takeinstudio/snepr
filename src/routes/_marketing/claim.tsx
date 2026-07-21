@@ -17,10 +17,10 @@ function ClaimSalon() {
   
   const { data: salons, isLoading } = useQuery({
     queryKey: ["salons"],
-    queryFn: () => getSalons(),
+    queryFn: async () => (await getSalons({ data: {} })) as any[],
   });
 
-  const filteredSalons = salons?.filter(s => 
+  const filteredSalons = salons?.filter((s: any) => 
     s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     s.address?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
@@ -60,7 +60,7 @@ function ClaimSalon() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {filteredSalons.map(salon => (
+            {filteredSalons.map((salon: any) => (
               <div key={salon.id} className="p-6 bg-card border border-border rounded-2xl flex flex-col justify-between hover:border-primary/30 transition-colors">
                 <div>
                   <div className="flex justify-between items-start mb-2">

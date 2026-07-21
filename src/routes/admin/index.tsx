@@ -322,25 +322,8 @@ function OverviewTab({ session, onNavigate }: { session: SessionUser; onNavigate
           </div>
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#9C948D] font-mono">LIVE FEED</span>
         </div>
-        <div className="divide-y divide-[#E8E2D9]/60">
-          {[
-            { title: "New salon registered", desc: "Lakme Salon Patia submitted KYC application", time: "10m ago", icon: Store },
-            { title: "Queue joined", desc: "Customer joined token #12 at Green Trends", time: "24m ago", icon: Zap },
-            { title: "Sub Admin created", desc: "Ravi Kumar assigned to Bhubaneswar scope", time: "1h ago", icon: ShieldCheck },
-          ].map((act, i) => (
-            <div key={i} className="p-4 flex items-center justify-between hover:bg-[#FAF7F2] transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] flex items-center justify-center text-[#7A4B29]">
-                  <act.icon className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[13.5px] font-bold text-[#1C1613]">{act.title}</div>
-                  <div className="text-[12px] text-[#6E6761]">{act.desc}</div>
-                </div>
-              </div>
-              <span className="text-[11px] font-semibold text-[#9C948D] font-mono">{act.time}</span>
-            </div>
-          ))}
+        <div className="p-6 text-center text-[#9C948D] text-[13px]">
+          No recent events to display.
         </div>
       </div>
     </div>
@@ -379,7 +362,7 @@ function SalonManagementTab({ session, initialFilter = "all" }: { session: Sessi
 
   const { data: salons = [], isLoading } = useQuery({
     queryKey: ["salons-admin", session.role, session.cityId],
-    queryFn: () => getSalons({ data: { callerRole: session.role, cityId: session.cityId ?? undefined } }),
+    queryFn: async () => (await getSalons({ data: { callerRole: session.role, cityId: session.cityId ?? undefined } })) as any[],
   });
 
   const approveMutation = useMutation({
@@ -737,7 +720,7 @@ function BookingManagementTab({ session }: { session: SessionUser }) {
                       {b.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right font-bold text-[#1C1613]">₹{((b.totalPrice ?? 35000) / 100).toFixed(0)}</td>
+                  <td className="px-6 py-4 text-right font-bold text-[#1C1613]">₹{((b.totalPrice ?? 0) / 100).toFixed(0)}</td>
                 </tr>
               ))}
             </tbody>
@@ -766,15 +749,15 @@ function FinancialsTab({ session }: { session: SessionUser }) {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#9C948D] mb-1">Total Platform Volume</div>
-          <div className="text-[32px] font-display font-bold text-[#1C1613]">₹{((finStats?.grossVolume ?? 1485000) / 100).toLocaleString("en-IN")}</div>
+          <div className="text-[32px] font-display font-bold text-[#1C1613]">₹{((finStats?.grossVolume ?? 0) / 100).toLocaleString("en-IN")}</div>
         </div>
         <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#9C948D] mb-1">Commission Earned (10%)</div>
-          <div className="text-[32px] font-display font-bold text-[#7A4B29]">₹{((finStats?.totalCommission ?? 148500) / 100).toLocaleString("en-IN")}</div>
+          <div className="text-[32px] font-display font-bold text-[#7A4B29]">₹{((finStats?.totalCommission ?? 0) / 100).toLocaleString("en-IN")}</div>
         </div>
         <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
           <div className="text-[11px] font-bold uppercase tracking-wider text-[#9C948D] mb-1">Pending Settlements</div>
-          <div className="text-[32px] font-display font-bold text-emerald-700">₹12,400</div>
+          <div className="text-[32px] font-display font-bold text-emerald-700">₹0</div>
         </div>
       </div>
 
@@ -918,7 +901,7 @@ function AccessControlTab({ session }: { session: SessionUser }) {
 function LiveMonitorTab({ session }: { session: SessionUser }) {
   const { data: salons = [] } = useQuery({
     queryKey: ["salons-live"],
-    queryFn: () => getSalons({ data: { callerRole: session.role } }),
+    queryFn: async () => (await getSalons({ data: { callerRole: session.role } })) as any[],
     refetchInterval: 10000,
   });
 

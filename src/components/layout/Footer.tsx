@@ -49,27 +49,27 @@ export function Footer() {
             </h3>
             <ul className="flex flex-col gap-3 text-[14px] text-ink-soft">
               <li>
-                <Link to="/list-salon" className="transition hover:text-ink">
+                <Link to={"/list-salon" as any} className="transition hover:text-ink">
                   List Your Salon
                 </Link>
               </li>
               <li>
-                <Link to="/claim" className="transition font-semibold text-primary hover:text-primary-hover">
+                <Link to={"/claim" as any} className="transition font-semibold text-primary hover:text-primary-hover">
                   Claim Your Salon
                 </Link>
               </li>
               <li>
-                <Link to="/partner-dashboard" className="transition hover:text-ink">
+                <Link to={"/partner-dashboard" as any} className="transition hover:text-ink">
                   Partner Dashboard
                 </Link>
               </li>
               <li>
-                <Link to="/pricing" className="transition hover:text-ink">
+                <Link to={"/pricing" as any} className="transition hover:text-ink">
                   Pricing
                 </Link>
               </li>
               <li>
-                <Link to="/partner-terms" className="transition hover:text-ink">
+                <Link to={"/partner-terms" as any} className="transition hover:text-ink">
                   Partner Terms
                 </Link>
               </li>

@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'in.snepr.app',
   appName: 'Snepr',
   webDir: '.output/public',
-  server: {
-    url: 'https://snepr.in/app',
-    cleartext: true
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { createAPIFileRoute } from "@tanstack/react-start/api";
 import { db } from "../../../../backend/db";
 import { queues } from "../../../../backend/db/schema";

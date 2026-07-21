@@ -1,6 +1,7 @@
+/*
  * seed.ts — Snepr database seeder & cleanup
-  * Run with: npx tsx src / scripts / seed.ts
-    */
+ * Run with: npx tsx src/scripts/seed.ts
+ */
 import { db } from "../backend/db";
 import * as schema from "../backend/db/schema";
 import { eq, sql } from "drizzle-orm";
