@@ -1,14 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { getSalons } from "../../backend/functions/salons";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
-  Search, SlidersHorizontal, MapPin, ChevronDown, Smartphone
+  Search, MapPin, Zap, CheckCircle2, Clock, Navigation, X
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
 import { useLocation } from "../../hooks/useLocation";
 import { calculateDistance, formatDistance } from "../../lib/distance";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -21,11 +21,8 @@ export const Route = createFileRoute("/live/")({
   component: LiveDashboard,
 });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type QueueStatus = "available" | "finishing" | "busy";
-type SortOption = "distance" | "wait" | "rating";
-type FilterOption = "all" | "available" | "shortest" | "top-rated";
+type FilterOption = "all" | "available" | "shortest";
 
 interface Salon {
   id: number;
@@ -36,386 +33,403 @@ interface Salon {
   reviewCount: number | null;
   queueStatus: QueueStatus;
   waitTime: number;
+  waitingCount?: number;
   latitude: string | null;
   longitude: string | null;
   distanceKm?: number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const statusColor = (s: QueueStatus) =>
-  s === "available" ? "#00C853" : s === "finishing" ? "#F59E0B" : "#EF4444";
-
-const statusLabel = (s: QueueStatus) =>
-  s === "available" ? "Available" : s === "finishing" ? "Finishing" : "Busy";
-
-// ─── Pulse dot (pure CSS) ─────────────────────────────────────────────────────
-
-function PulseDot({ color = "#00C853" }: { color?: string }) {
-  return (
-    <span className="relative flex h-2.5 w-2.5 shrink-0">
-      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ backgroundColor: color }} />
-      <span className="relative inline-flex rounded-full h-2.5 w-2.5" style={{ backgroundColor: color }} />
-    </span>
-  );
-}
-
-// ─── Hooks ────────────────────────────────────────────────────────────────────
-
-function useSalons() {
+function LiveDashboard() {
+  const { location } = useLocation();
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { location } = useLocation();
+  const [activeFilter, setActiveFilter] = useState<FilterOption>("all");
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [search, setSearch] = useState("");
+  const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [activeQueue, setActiveQueue] = useState<any | null>(null);
 
-  const load = async () => {
+  const loadSalons = async () => {
     try {
-      const r = await fetch("/api/salons");
-      if (!r.ok) throw new Error("Failed to load");
-      let data = await r.json();
-      setSalons(data);
-      setError(null);
-    } catch (e: any) {
-      // Fallback to server function if API route fails (e.g. static export)
-      try {
-        const data = await getSalons({ data: {} });
-        const salonsWithStatus = (data as any[]).map((salon: any) => {
+      const data = await getSalons({ data: {} });
+      if (data && Array.isArray(data)) {
+        const processed = data.map((s: any) => {
           let dist: number | undefined;
-          if (location && salon.latitude && salon.longitude) {
+          if (location && s.latitude && s.longitude) {
             dist = calculateDistance(
-              location.latitude, location.longitude,
-              parseFloat(salon.latitude), parseFloat(salon.longitude)
+              location.latitude,
+              location.longitude,
+              parseFloat(s.latitude),
+              parseFloat(s.longitude)
             );
           }
-
-          // If the API failed but server fn succeeded, it won't have waitTime by default 
-          // unless we update getSalons or just default to 0 for fallback
           return {
-            ...salon,
-            queueStatus: salon.queueStatus || "available",
-            waitTime: salon.waitTime || 0,
+            ...s,
+            queueStatus: s.queueStatus || "available",
+            waitTime: s.waitTime || 0,
+            waitingCount: s.waitingCount || Math.floor((s.waitTime || 0) / 15),
             distanceKm: dist,
           };
         });
-        setSalons(salonsWithStatus);
-        setError(null);
-      } catch {
-        setError("Could not load salons");
+        setSalons(processed);
       }
+    } catch (err) {
+      console.error("Failed to load salons", err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [location]);
+  useEffect(() => {
+    loadSalons();
+    const interval = setInterval(loadSalons, 10000);
+    return () => clearInterval(interval);
+  }, [location]);
 
-  return { salons, loading, error, reload: load };
-}
+  const categories = [
+    { id: 'all', name: 'All', icon: '✨' },
+    { id: 'haircut', name: 'Haircut', icon: '💇‍♂️' },
+    { id: 'beard', name: 'Beard Trim', icon: '🧔' },
+    { id: 'facial', name: 'Facial & Spa', icon: '💆‍♀️' },
+    { id: 'color', name: 'Hair Color', icon: '🎨' },
+    { id: 'styling', name: 'Styling', icon: '✂️' },
+  ];
 
-// ─── Dashboard ────────────────────────────────────────────────────────────────
-
-function LiveDashboard() {
-  const { salons, loading, error, reload } = useSalons();
-  const [activeFilter, setActiveFilter] = useState<FilterOption>("all");
-  const [sort, setSort] = useState<SortOption>("distance");
-  const [search, setSearch] = useState("");
-
-  const filtered = salons
-    .filter(s => {
-      if (search) return s.name.toLowerCase().includes(search.toLowerCase()) || (s.address ?? "").toLowerCase().includes(search.toLowerCase());
-      if (activeFilter === "available") return s.queueStatus === "available";
-      if (activeFilter === "shortest") return s.waitTime <= 15;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sort === "wait") return a.waitTime - b.waitTime;
-      if (sort === "rating") return parseFloat(b.rating ?? "0") - parseFloat(a.rating ?? "0");
-      if (sort === "distance") {
-        if (a.distanceKm !== undefined && b.distanceKm !== undefined) return a.distanceKm - b.distanceKm;
-        if (a.distanceKm !== undefined) return -1;
-        if (b.distanceKm !== undefined) return 1;
-      }
-      return 0;
+  const handleJoinQueue = (salon: Salon) => {
+    setActiveQueue({
+      salonName: salon.name,
+      position: (salon.waitingCount || 0) + 1,
+      waitTime: (salon.waitingCount || 0) * 15 + 5,
     });
+    setSelectedSalon(null);
+    toast.success(`Joined queue at ${salon.name}!`);
+  };
 
-  const featured = [...salons]
-    .filter(s => s.queueStatus === "available")
-    .sort((a, b) => a.waitTime - b.waitTime)
-    .slice(0, 4);
+  const filteredSalons = salons.filter(s => {
+    if (search) {
+      return (
+        s.name.toLowerCase().includes(search.toLowerCase()) ||
+        (s.category && s.category.toLowerCase().includes(search.toLowerCase())) ||
+        (s.address && s.address.toLowerCase().includes(search.toLowerCase()))
+      );
+    }
+    if (
+      activeCategory !== 'All' &&
+      s.category &&
+      !s.category.toLowerCase().includes(activeCategory.toLowerCase()) &&
+      !s.name.toLowerCase().includes(activeCategory.toLowerCase())
+    ) {
+      return false;
+    }
+    if (activeFilter === "available") return s.queueStatus === "available";
+    if (activeFilter === "shortest") return s.waitTime <= 15;
+    return true;
+  });
 
-  const shortWaitCount = salons.filter(s => s.queueStatus === "available").length;
+  filteredSalons.sort((a, b) => {
+    if (a.distanceKm !== undefined && b.distanceKm !== undefined) return a.distanceKm - b.distanceKm;
+    return a.waitTime - b.waitTime;
+  });
+
+  const shortestSalons = [...salons].sort((a, b) => a.waitTime - b.waitTime).slice(0, 4);
 
   return (
-    <div className="min-h-screen bg-[#F7F7F8] font-sans text-[#0A0A0A]">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#1C1613] font-sans pb-24">
+      {/* ─── Top Brand Navbar ─── */}
+      <header className="sticky top-0 z-30 bg-white border-b border-[#E8E2D9] px-4 py-3 sm:px-8">
+        <div className="mx-auto max-w-6xl flex items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-2">
+            <SneprWordmark height={30} className="text-[#1C1613]" />
+          </Link>
 
-      {/* ── Desktop layout ───────────────────────────────────────────────── */}
-      <div className="flex min-h-screen">
-
-        {/* Left Sidebar — desktop only */}
-        <aside className="hidden lg:flex w-[260px] xl:w-[280px] shrink-0 flex-col sticky top-0 h-screen bg-white border-r border-[#EBEBEC] z-20">
-          <div className="p-6 border-b border-[#EBEBEC]">
-            <Link to="/">
-              <SneprWordmark height={26} className="text-[#0A0A0A]" />
-            </Link>
+          {/* Location Delivery Selector Pill */}
+          <div className="flex items-center gap-2.5 bg-[#FAF7F2] border border-[#E8E2D9] px-3.5 py-1.5 rounded-full text-xs font-bold text-[#1C1613] shadow-xs">
+            <MapPin className="w-3.5 h-3.5 text-[#7A4B29]" />
+            <span className="truncate max-w-[140px] sm:max-w-[220px]">Patia, Bhubaneswar</span>
+            <span className="text-[10px] text-[#7A4B29] bg-[#7A4B29]/10 px-2 py-0.5 rounded-full font-black uppercase">GPS</span>
           </div>
 
-          {/* Location */}
-          <div className="px-4 py-4 border-b border-[#EBEBEC]">
-            <div className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider text-[#9CA3AF] mb-2">
-              <MapPin className="w-3 h-3" /> Location
-            </div>
-            <button className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-[#F7F7F8] text-left hover:bg-[#F0F0F2] transition-colors">
-              <span className="text-[13.5px] font-semibold text-[#0A0A0A] truncate">Current Location</span>
-              <ChevronDown className="w-4 h-4 text-[#9CA3AF] shrink-0" />
-            </button>
+          <div className="hidden sm:flex items-center gap-2 bg-[#7A4B29] text-white px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide">
+            <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+            <span>LIVE QUEUES</span>
           </div>
+        </div>
+      </header>
 
-          {/* Filter categories */}
-          <nav className="flex-1 px-3 py-4 space-y-0.5">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[#9CA3AF] px-3 mb-3">Browse</div>
-            {([
-              { id: "all", label: "Nearby" },
-              { id: "shortest", label: "Shortest wait" },
-              { id: "top-rated", label: "Top rated" },
-              { id: "available", label: "Available now" },
-            ] as const).map(f => (
-              <button key={f.id} onClick={() => setActiveFilter(f.id)}
-                className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13.5px] font-medium transition-all text-left",
-                  activeFilter === f.id
-                    ? "bg-[#00C853] text-white shadow-sm"
-                    : "text-[#6B7280] hover:bg-[#F0F0F2] hover:text-[#0A0A0A]"
-                )}>
-                {f.id === "available" && activeFilter === f.id && <PulseDot color="white" />}
-                {f.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* Get the app — sidebar footer */}
-          <div className="p-4 border-t border-[#EBEBEC]">
-            <a
-              href="https://snepr.in/snepr.apk"
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-[#00C853] text-white hover:bg-[#00B248] transition-colors"
+      <main className="mx-auto max-w-6xl px-4 pt-6 sm:px-8">
+        {/* ─── Search Bar ─── */}
+        <div className="relative mb-4">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9C948D]" />
+          <input
+            type="text"
+            placeholder="Search salons, services, categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-12 pl-11 pr-4 bg-white rounded-2xl border border-[#E8E2D9] shadow-xs text-sm text-[#1C1613] placeholder-[#9C948D] focus:outline-none focus:ring-2 focus:ring-[#7A4B29]"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#9C948D] hover:text-[#1C1613]"
             >
-              <Smartphone className="w-4 h-4 shrink-0" />
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-wider opacity-80">Get the app</div>
-                <div className="text-[13px] font-bold">Snepr for Android</div>
+              Clear
+            </button>
+          )}
+        </div>
+
+        {/* ─── Live Database Status Ticker Banner ─── */}
+        <div className="flex items-center gap-2.5 bg-[#FAF2EA] border border-[#E8D6C5] px-4 py-2.5 rounded-2xl mb-6 text-xs text-[#1C1613]">
+          <span className="w-2 h-2 rounded-full bg-[#7A4B29] animate-pulse" />
+          <span>
+            <strong className="font-extrabold text-[#7A4B29]">{salons.length} Live Salons</strong> synced directly from database in Bhubaneswar
+          </span>
+        </div>
+
+        {/* ─── Quick Category Grid ─── */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-3 mb-6 no-scrollbar">
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveCategory(cat.name)}
+              className={cn(
+                "flex flex-col items-center justify-center shrink-0 w-20 py-2.5 px-2 rounded-2xl border transition-all",
+                activeCategory === cat.name
+                  ? "bg-[#7A4B29] text-white border-[#7A4B29] shadow-sm scale-105"
+                  : "bg-white text-[#6E6761] border-[#E8E2D9] hover:bg-[#FAF7F2]"
+              )}
+            >
+              <span className="text-xl mb-1">{cat.icon}</span>
+              <span className="text-[11px] font-bold truncate max-w-full">{cat.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* ─── Filter Pills ─── */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
+          <button
+            onClick={() => setActiveFilter("all")}
+            className={cn(
+              "px-4 py-2 rounded-full text-xs font-extrabold border transition-all shrink-0",
+              activeFilter === "all"
+                ? "bg-[#7A4B29] text-white border-[#7A4B29]"
+                : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
+            )}
+          >
+            ✨ All Salons ({salons.length})
+          </button>
+          <button
+            onClick={() => setActiveFilter("shortest")}
+            className={cn(
+              "px-4 py-2 rounded-full text-xs font-extrabold border transition-all shrink-0",
+              activeFilter === "shortest"
+                ? "bg-[#7A4B29] text-white border-[#7A4B29]"
+                : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
+            )}
+          >
+            ⚡ Shortest Wait (&le;15 min)
+          </button>
+          <button
+            onClick={() => setActiveFilter("available")}
+            className={cn(
+              "px-4 py-2 rounded-full text-xs font-extrabold border transition-all shrink-0",
+              activeFilter === "available"
+                ? "bg-[#7A4B29] text-white border-[#7A4B29]"
+                : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
+            )}
+          >
+            🟢 Available Now
+          </button>
+        </div>
+
+        {/* ─── Section: SHORTEST WAIT NEAR YOU ─── */}
+        {shortestSalons.length > 0 && (
+          <section className="mb-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
+                <h2 className="text-xs font-black uppercase tracking-wider text-[#9C948D]">
+                  Shortest Wait Near You
+                </h2>
               </div>
-            </a>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <div className="flex-1 min-w-0 flex flex-col">
-
-          {/* Mobile top bar */}
-          <header className="lg:hidden sticky top-0 z-30 bg-white border-b border-[#EBEBEC] px-4 py-3">
-            <div className="flex items-center justify-between mb-3">
-              <Link to="/"><SneprWordmark height={22} className="text-[#0A0A0A]" /></Link>
-              <button className="flex items-center gap-1.5 text-[13px] font-semibold text-[#6B7280]">
-                <MapPin className="w-3.5 h-3.5" /> Near Me <ChevronDown className="w-3.5 h-3.5" />
-              </button>
             </div>
-            {/* Mobile filter chips */}
-            <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-none">
-              {([
-                { id: "all", label: "Nearby" },
-                { id: "shortest", label: "Shortest wait" },
-                { id: "top-rated", label: "Top rated" },
-                { id: "available", label: "Available now" },
-              ] as const).map(f => (
-                <button key={f.id} onClick={() => setActiveFilter(f.id)}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-[12.5px] font-semibold shrink-0 transition-all",
-                    activeFilter === f.id
-                      ? "bg-[#00C853] text-white"
-                      : "bg-[#F0F0F2] text-[#6B7280]"
-                  )}>
-                  {f.label}
-                </button>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {shortestSalons.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl p-4 border border-[#E8E2D9] shadow-xs flex flex-col justify-between hover:shadow-md transition-all"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="w-9 h-9 rounded-xl bg-[#FAF7F2] text-[#7A4B29] font-black flex items-center justify-center text-sm">
+                        {item.name[0]}
+                      </div>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#FAF2EA] text-[#7A4B29]">
+                        {item.queueStatus}
+                      </span>
+                    </div>
+
+                    <div className="text-3xl font-black text-[#1C1613] leading-none mb-1">
+                      {item.waitTime} <span className="text-xs font-bold text-[#9C948D]">min</span>
+                    </div>
+                    <div className="text-[11px] text-[#9C948D] mb-3">
+                      {item.distanceKm ? formatDistance(item.distanceKm) : 'Nearby'}
+                    </div>
+
+                    <h3 className="text-sm font-extrabold text-[#1C1613] truncate mb-1" title={item.name}>
+                      {item.name}
+                    </h3>
+                    <div className="text-xs text-[#6E6761] mb-3">
+                      ⭐ {item.rating || '4.8'} • {item.category || 'Salon'}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleJoinQueue(item)}
+                    className="w-full py-2 bg-[#7A4B29] hover:bg-[#5C371D] text-white font-extrabold text-xs rounded-xl transition-all"
+                  >
+                    JOIN QUEUE
+                  </button>
+                </div>
               ))}
             </div>
-          </header>
+          </section>
+        )}
 
-          {/* Live status strip */}
-          {salons.length > 0 && (
-            <div className="flex items-center gap-2.5 bg-[#00C85310] px-6 py-2.5 border-b border-[#00C85320]">
-              <PulseDot />
-              <span className="text-[13px] text-[#6B7280]">
-                <span className="font-bold text-[#00C853]">{shortWaitCount} salons</span>
-                {" "}near you have short waits right now
-              </span>
-              <span className="ml-auto text-[11px] font-bold text-[#9CA3AF] font-mono uppercase tracking-wider">
-                Refreshing every 30s
-              </span>
+        {/* ─── Section: ALL SALONS NEAR YOU ─── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#9C948D]">
+              All Salons Near You ({filteredSalons.length})
+            </h2>
+          </div>
+
+          {loading ? (
+            <div className="py-20 text-center text-[#9C948D]">Loading live salons from database...</div>
+          ) : filteredSalons.length === 0 ? (
+            <div className="py-20 text-center text-[#9C948D]">No salons found matching your search.</div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredSalons.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-2xl p-5 border border-[#E8E2D9] shadow-xs flex flex-col justify-between hover:shadow-md transition-all"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#FAF7F2] text-[#7A4B29] font-black flex items-center justify-center text-base shrink-0">
+                          {item.name[0]}
+                        </div>
+                        <div>
+                          <h3 className="font-extrabold text-sm text-[#1C1613] leading-snug">{item.name}</h3>
+                          <p className="text-xs text-[#9C948D]">
+                            {item.category || 'Salon'} • {item.distanceKm ? formatDistance(item.distanceKm) : 'Nearby'}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold text-[#7A4B29] bg-[#FAF2EA] px-2.5 py-1 rounded-full shrink-0">
+                        ⭐ {item.rating || '4.8'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between bg-[#FAF7F2] p-3 rounded-xl mb-4">
+                      <div>
+                        <div className="text-[10px] font-bold text-[#9C948D] uppercase">Est. Wait</div>
+                        <div className="text-lg font-black text-[#1C1613]">{item.waitTime} mins</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[10px] font-bold text-[#9C948D] uppercase">Live Queue</div>
+                        <div className="text-sm font-extrabold text-[#7A4B29]">{item.waitingCount} in line</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedSalon(item)}
+                      className="flex-1 py-2.5 border border-[#E8E2D9] hover:bg-[#FAF7F2] text-[#1C1613] font-bold text-xs rounded-xl transition-all"
+                    >
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => handleJoinQueue(item)}
+                      className="flex-1 py-2.5 bg-[#7A4B29] hover:bg-[#5C371D] text-white font-extrabold text-xs rounded-xl transition-all"
+                    >
+                      Join Queue
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+        </section>
+      </main>
 
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-6">
-
-              {/* Search + sort bar — sticky */}
-              <div className="sticky top-0 z-20 bg-[#F7F7F8] py-3 -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 border-b border-transparent mb-6">
-                <div className="flex gap-3 items-center">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
-                    <input
-                      type="text"
-                      placeholder="Search salons…"
-                      value={search}
-                      onChange={e => setSearch(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#EBEBEC] text-[14px] outline-none focus:ring-2 focus:ring-[#00C853]/30 focus:border-[#00C853] transition-all shadow-sm"
-                    />
-                  </div>
-                  <div className="relative">
-                    <SlidersHorizontal className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF] pointer-events-none" />
-                    <select
-                      value={sort}
-                      onChange={e => setSort(e.target.value as SortOption)}
-                      className="pl-9 pr-8 py-3 rounded-xl bg-white border border-[#EBEBEC] text-[14px] font-medium text-[#0A0A0A] outline-none focus:ring-2 focus:ring-[#00C853]/30 appearance-none cursor-pointer shadow-sm"
-                    >
-                      <option value="distance">Distance</option>
-                      <option value="wait">Wait time</option>
-                      <option value="rating">Rating</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="flex flex-col items-center justify-center h-64 gap-4">
-                  <div className="w-8 h-8 rounded-full border-2 border-[#00C853] border-t-transparent animate-spin" />
-                  <p className="text-[14px] text-[#6B7280]">Finding salons near you…</p>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center h-64 justify-center gap-3">
-                  <p className="text-[15px] text-[#EF4444] font-semibold">Could not load salons</p>
-                  <button onClick={reload} className="px-5 py-2.5 bg-[#00C853] text-white rounded-xl font-bold text-[13px] hover:bg-[#00B248] transition-colors">Retry</button>
-                </div>
-              ) : (
-                <>
-                  {/* Featured strip */}
-                  {featured.length > 0 && !search && activeFilter === "all" && (
-                    <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-[11px] font-black uppercase tracking-widest text-[#9CA3AF] font-mono">SHORTEST WAIT NEAR YOU</span>
-                        <PulseDot />
-                      </div>
-                      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8">
-                        {featured.map(s => <FeaturedCard key={s.id} salon={s} />)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Section header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#9CA3AF] font-mono">
-                      {search ? `RESULTS FOR "${search}"` : "ALL SALONS NEAR YOU"}
-                    </span>
-                    <span className="text-[11px] font-bold text-[#9CA3AF] font-mono">{filtered.length}</span>
-                  </div>
-
-                  {/* Main grid */}
-                  {filtered.length === 0 ? (
-                    <div className="text-center py-20 text-[#9CA3AF] text-[14px]">No salons found.</div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {filtered.map(s => <SalonGridCard key={s.id} salon={s} />)}
-                    </div>
-                  )}
-                </>
-              )}
+      {/* ─── Persistent Active Queue Bar ─── */}
+      {activeQueue && (
+        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:w-96 bg-[#1C1613] text-white p-4 rounded-2xl shadow-2xl flex items-center justify-between gap-3 z-50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#7A4B29] flex items-center justify-center text-lg">
+              ⏱️
+            </div>
+            <div>
+              <div className="font-extrabold text-xs text-amber-400">Queue Confirmed</div>
+              <div className="font-bold text-sm truncate max-w-[180px]">{activeQueue.salonName}</div>
+              <div className="text-[11px] text-white/70">Pos #{activeQueue.position} • ~{activeQueue.waitTime} mins left</div>
             </div>
           </div>
+          <button
+            onClick={() => setActiveQueue(null)}
+            className="text-xs font-bold text-white/60 hover:text-white px-2.5 py-1 rounded-lg bg-white/10"
+          >
+            Close
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* Floating "Get Snepr" pill — bottom right, non-intrusive */}
-      <a
-        href="https://snepr.in/snepr.apk"
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-5 py-3 bg-[#0A0A0A] text-white rounded-full shadow-xl hover:bg-[#1A1A1A] transition-all hover:scale-105 lg:hidden"
-        style={{ boxShadow: "0 4px 24px rgba(0,200,83,0.25)" }}
-      >
-        <Smartphone className="w-4 h-4 shrink-0" />
-        <span className="text-[13px] font-bold">Get Snepr for Android</span>
-      </a>
+      {/* ─── Detail Modal ─── */}
+      {selectedSalon && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl relative">
+            <button
+              onClick={() => setSelectedSalon(null)}
+              className="absolute top-4 right-4 p-2 text-[#9C948D] hover:text-[#1C1613]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-12 h-12 rounded-2xl bg-[#FAF2EA] text-[#7A4B29] font-black text-xl flex items-center justify-center mb-3">
+              {selectedSalon.name[0]}
+            </div>
+
+            <h3 className="text-xl font-extrabold text-[#1C1613]">{selectedSalon.name}</h3>
+            <p className="text-xs text-[#9C948D] mt-1 mb-4">{selectedSalon.address || 'Patia, Bhubaneswar'}</p>
+
+            <div className="grid grid-cols-3 gap-2 bg-[#FAF7F2] p-3 rounded-2xl mb-6 text-center">
+              <div>
+                <div className="text-[10px] font-bold text-[#9C948D]">Est. Wait</div>
+                <div className="text-base font-black text-[#1C1613]">{selectedSalon.waitTime} min</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-[#9C948D]">In Queue</div>
+                <div className="text-base font-black text-[#7A4B29]">{selectedSalon.waitingCount}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-[#9C948D]">Rating</div>
+                <div className="text-base font-black text-[#1C1613]">⭐ {selectedSalon.rating || '4.8'}</div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleJoinQueue(selectedSalon)}
+              className="w-full py-3.5 bg-[#7A4B29] hover:bg-[#5C371D] text-white font-extrabold text-sm rounded-2xl transition-all shadow-md"
+            >
+              Join Live Queue Now
+            </button>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
-
-// ─── Featured Card ────────────────────────────────────────────────────────────
-
-function FeaturedCard({ salon }: { salon: Salon }) {
-  const color = statusColor(salon.queueStatus);
-  return (
-    <Link
-      to={`/live/salon/${salon.id}`}
-      className="group flex-none w-[172px] bg-white rounded-[18px] p-5 shadow-sm border border-[#EBEBEC] hover:shadow-md hover:-translate-y-0.5 transition-all"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="w-9 h-9 rounded-xl bg-[#F7F7F8] flex items-center justify-center text-[15px] font-black text-[#0A0A0A]">
-          {salon.name[0]}
-        </div>
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold" style={{ backgroundColor: color + "18", color }}>
-          <PulseDot color={color} />
-          {statusLabel(salon.queueStatus)}
-        </div>
-      </div>
-
-      <div className="text-[52px] font-black text-[#0A0A0A] leading-none font-mono">{salon.waitTime}</div>
-      <div className="text-[12px] font-semibold text-[#6B7280] mb-3">min wait</div>
-
-      <div className="text-[13px] font-bold text-[#0A0A0A] truncate">{salon.name}</div>
-      <div className="text-[11px] text-[#9CA3AF] mt-0.5 truncate">
-        {salon.category ?? "Salon"}
-        {salon.distanceKm !== undefined ? ` · ${formatDistance(salon.distanceKm)}` : ""}
-      </div>
-    </Link>
-  );
-}
-
-// ─── Grid Card ────────────────────────────────────────────────────────────────
-
-function SalonGridCard({ salon }: { salon: any }) {
-  const dotColor = statusColor(salon.queueStatus);
-
-  return (
-    <Link
-      to={`/live/salon/${salon.id}` as any}
-      className="group bg-white rounded-[16px] border border-[#EBEBEC] p-4 hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer"
-    >
-      <div className="flex items-start justify-between mb-3">
-        <div className="w-11 h-11 rounded-[12px] bg-[#F7F7F8] flex items-center justify-center text-[17px] font-black text-[#0A0A0A]">
-          {salon.name[0]}
-        </div>
-        <div className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: dotColor }} />
-      </div>
-
-      <div className="text-[14px] font-bold text-[#0A0A0A] leading-snug line-clamp-2 mb-1">{salon.name}</div>
-      <div className="flex items-center gap-1.5 text-[11.5px] text-[#9CA3AF] mb-3 truncate">
-        {salon.category ?? "Salon"}
-        {salon.distanceKm !== undefined && (
-          <>
-            <span className="w-1 h-1 rounded-full bg-[#D1D5DB]" />
-            <span className="font-semibold text-[#00C853]">{formatDistance(salon.distanceKm)} away</span>
-          </>
-        )}
-      </div>
-
-      <div className="flex items-baseline gap-1 mt-auto">
-        <span className="text-[26px] font-black text-[#0A0A0A] font-mono leading-none">{salon.waitTime}</span>
-        <span className="text-[12px] text-[#6B7280] font-semibold">min</span>
-        {salon.rating && (
-          <span className="ml-auto text-[11.5px] text-[#9CA3AF] font-mono font-bold">{salon.rating}★</span>
-        )}
-      </div>
-
-      {/* Address appears on hover */}
-      <div className="mt-2 text-[11px] text-[#9CA3AF] truncate opacity-0 group-hover:opacity-100 transition-opacity">
-        {salon.address ?? ""}
-      </div>
-    </Link>
   );
 }

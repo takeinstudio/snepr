@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
-import { Geolocation, Position } from "@capacitor/geolocation";
+import { Geolocation } from "@capacitor/geolocation";
 
 export interface Coordinates {
   latitude: number;
@@ -8,31 +8,26 @@ export interface Coordinates {
 }
 
 export function useLocation() {
-  const [location, setLocation] = useState<Coordinates | null>(null);
+  // Default coordinates: Patia, Bhubaneswar (20.3533, 85.8266)
+  const [location, setLocation] = useState<Coordinates>({
+    latitude: 20.3533,
+    longitude: 85.8266,
+  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchLocation();
-    
-    return () => {
-      // cleanup
-    };
-  }, []);
+    let mounted = true;
 
-  async function fetchLocation() {
+    async function fetchLocation() {
       setLoading(true);
       setError(null);
 
       try {
         if (Capacitor.isNativePlatform()) {
-          // Native Capacitor Geolocation
           const permissions = await Geolocation.checkPermissions();
           if (permissions.location !== "granted") {
-            const req = await Geolocation.requestPermissions();
-            if (req.location !== "granted") {
-              throw new Error("Location permission denied");
-            }
+            await Geolocation.requestPermissions();
           }
           
           const pos = await Geolocation.getCurrentPosition({
@@ -46,34 +41,42 @@ export function useLocation() {
               longitude: pos.coords.longitude,
             });
           }
-          } else {
-            // Web Browser Geolocation
-            if (!navigator.geolocation) {
-              throw new Error("Geolocation is not supported by your browser");
-            }
-
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, { 
-              enableHighAccuracy: true, 
-              timeout: 10000,
-              maximumAge: 0
-            });
-          });
-
-          if (mounted) {
-            setLocation({
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-            });
+        } else {
+          if (typeof navigator !== "undefined" && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (pos) => {
+                if (mounted) {
+                  setLocation({
+                    latitude: pos.coords.latitude,
+                    longitude: pos.coords.longitude,
+                  });
+                }
+              },
+              (err) => {
+                // Silently fallback without alert modal
+                if (mounted) {
+                  setError("Using default location (Patia, Bhubaneswar)");
+                }
+              },
+              { enableHighAccuracy: true, timeout: 8000 }
+            );
           }
         }
       } catch (err: any) {
-        alert("Location Error: " + (err.message || JSON.stringify(err)));
-        setError(err.message || "Failed to get location");
+        if (mounted) {
+          setError(err.message || "Failed to get location");
+        }
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     }
 
-  return { location, error, loading, fetchLocation };
+    fetchLocation();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return { location, error, loading };
 }
