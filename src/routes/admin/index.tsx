@@ -9,7 +9,7 @@ import {
   LogOut, Bell, ArrowRight, ShieldCheck, Megaphone, FileText,
   DollarSign, AlertTriangle, CheckCircle, XCircle,
   Plus, Search, Zap, TrendingUp, Sparkles,
-  Percent, Send, Trash2, Edit2, Shield, UserPlus
+  Percent, Send, Trash2, Edit2, Shield, UserPlus, Menu, X
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
@@ -146,6 +146,7 @@ function LoginScreen({ username, setUsername, password, setPassword, error, onSu
 function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const [salonFilterParam, setSalonFilterParam] = useState<string>("all");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
 
   const visibleLinks = session.role === "sub_admin"
     ? SIDEBAR.filter(s => ["Overview", "Salon Management", "Booking Management", "Marketing"].includes(s.name))
@@ -154,23 +155,43 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
   const navigateToTab = (tab: Tab, filterVal?: string) => {
     setActiveTab(tab);
     if (filterVal) setSalonFilterParam(filterVal);
+    setMobileMenuOpen(false);
   };
 
   return (
     <div className="flex h-screen bg-[#FAF8F5] font-sans text-[#1C1613] overflow-hidden">
-      {/* Left Sidebar */}
-      <aside className="w-[260px] shrink-0 border-r border-[#E8E2D9] bg-white flex flex-col z-20">
-        <div className="p-6 border-b border-[#E8E2D9]">
-          <SneprWordmark height={26} className="text-[#1C1613] mb-3" />
-          <div className={cn(
-            "inline-flex items-center gap-1.5 px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full",
-            session.role === "super_admin"
-              ? "bg-[#7A4B29]/10 text-[#7A4B29]"
-              : "bg-blue-50 text-blue-700"
-          )}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#7A4B29]" />
-            {session.role === "super_admin" ? "Super Admin" : `Sub Admin · ${session.cityId ? `City #${session.cityId}` : "All Cities"}`}
+      {/* Mobile Drawer Overlay */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-xs transition-opacity"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Slide-out Mobile Sidebar / Desktop Sidebar */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-[#E8E2D9] flex flex-col transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 lg:w-[260px] lg:z-20",
+        mobileMenuOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+      )}>
+        <div className="p-5 border-b border-[#E8E2D9] flex items-center justify-between">
+          <div>
+            <SneprWordmark height={26} className="text-[#1C1613] mb-2" />
+            <div className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full",
+              session.role === "super_admin"
+                ? "bg-[#7A4B29]/10 text-[#7A4B29]"
+                : "bg-blue-50 text-blue-700"
+            )}>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#7A4B29]" />
+              {session.role === "super_admin" ? "Super Admin" : `Sub Admin · ${session.cityId ? `City #${session.cityId}` : "All Cities"}`}
+            </div>
           </div>
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="lg:hidden p-2 text-[#6E6761] hover:text-[#1C1613] rounded-lg hover:bg-[#FAF7F2]"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-1">
@@ -206,16 +227,25 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 bg-[#FAF8F5]">
-        <header className="h-[68px] shrink-0 bg-white border-b border-[#E8E2D9] flex items-center justify-between px-8 z-10">
+        <header className="h-[64px] sm:h-[68px] shrink-0 bg-white border-b border-[#E8E2D9] flex items-center justify-between px-4 sm:px-8 z-10">
           <div className="flex items-center gap-3">
-            <h1 className="text-[20px] font-display font-bold text-[#1C1613]">{activeTab}</h1>
-            <span className="text-[12px] font-bold text-[#7A4B29] bg-[#7A4B29]/10 px-2.5 py-0.5 rounded-full">Admin Console</span>
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="lg:hidden p-2 -ml-1 text-[#1C1613] hover:bg-[#FAF7F2] rounded-xl"
+              aria-label="Open Mobile Menu"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <h1 className="text-[17px] sm:text-[20px] font-display font-bold text-[#1C1613] truncate">{activeTab}</h1>
+            <span className="hidden xs:inline-flex text-[11px] sm:text-[12px] font-bold text-[#7A4B29] bg-[#7A4B29]/10 px-2.5 py-0.5 rounded-full">
+              Admin
+            </span>
           </div>
 
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="text-right hidden sm:block">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#9C948D]">Founder</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#9C948D]">Administrator</div>
                 <div className="text-[13.5px] font-bold text-[#7A4B29]">{session.name ?? session.username}</div>
               </div>
               <div className="w-9 h-9 rounded-xl bg-[#7A4B29] text-white flex items-center justify-center font-black text-sm shadow-sm">
@@ -225,7 +255,7 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
           {activeTab === "Overview" && <OverviewTab session={session} onNavigate={navigateToTab} />}
           {activeTab === "Salon Management" && <SalonManagementTab session={session} initialFilter={salonFilterParam} />}
           {activeTab === "User Management" && <UserManagementTab session={session} />}
