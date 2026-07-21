@@ -16,8 +16,7 @@
       "package": "in.snepr.app",
       "adaptiveIcon": {
         "backgroundColor": "#FAF7F2",
-        "foregroundImage": "./assets/images/snepr-icon.webp",
-        "backgroundImage": "./assets/images/snepr-icon.webp"
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       }
     },
     "web": {

@@ -15,7 +15,8 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
-SplashScreen.preventAutoHideAsync();
+// Prevent splash screen from auto-hiding until ready
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -25,49 +26,23 @@ export default function RootLayout() {
   const [splashFinished, setSplashFinished] = useState(false);
 
   useEffect(() => {
-    if (error) throw error;
+    if (error) console.warn('Font load error:', error);
   }, [error]);
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      SplashScreen.hideAsync().catch(() => {});
     }
   }, [loaded]);
 
+  // Guaranteed Safety Timeout: Force hide native splash and finish overlay within 1.2s
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const styleId = 'custom-scrollbar-style';
-      if (!document.getElementById(styleId)) {
-        const style = document.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-          ::-webkit-scrollbar {
-            width: 6px !important;
-            height: 0px !important;
-          }
-          ::-webkit-scrollbar:horizontal {
-            display: none !important;
-            height: 0px !important;
-          }
-          ::-webkit-scrollbar-track {
-            background: #FAF7F2 !important;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: #7A4B29 !important;
-            border-radius: 9999px !important;
-          }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #5C371D !important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-    }
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setSplashFinished(true);
+    }, 1200);
+    return () => clearTimeout(timer);
   }, []);
-
-  if (!loaded) {
-    return null;
-  }
 
   return (
     <QueryProvider>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { SneprWordmark } from './SneprWordmark';
 
 interface SneprLogoProps {
   fontSize?: number;
@@ -9,9 +10,7 @@ interface SneprLogoProps {
 export function SneprLogo({ fontSize = 28, color = '#101012' }: SneprLogoProps) {
   return (
     <View style={styles.container}>
-      <Text style={[styles.text, { fontSize, color }]}>
-        sn≡pr
-      </Text>
+      <SneprWordmark height={fontSize} color={color} />
     </View>
   );
 }
@@ -20,9 +19,5 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  text: {
-    fontWeight: '900',
-    letterSpacing: -1,
   },
 });
