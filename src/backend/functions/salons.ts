@@ -39,6 +39,36 @@ export const getSalons = createServerFn({ method: "GET" })
     return salonsWithStatus;
   });
 
+export const getSalonStylists = createServerFn({ method: "GET" })
+  .validator((d?: any) => d)
+  .handler(async () => {
+    try {
+      const allStaff = await db.select({
+        id: staff.id,
+        role: staff.role,
+        breakMode: staff.breakMode,
+        name: users.name,
+      }).from(staff)
+      .innerJoin(users, eq(staff.userId, users.id));
+
+      if (allStaff.length > 0) {
+        return allStaff.map(s => ({
+          name: s.name || "Stylist",
+          role: s.role === "manager" ? "Master Stylist" : "Sr. Barber",
+          status: s.breakMode ? "busy" : "available",
+          eta: s.breakMode ? "20 min" : "Now",
+        }));
+      }
+    } catch (e) {
+      console.error("Staff fetch error", e);
+    }
+
+    return [
+      { name: "Master Stylist", role: "Hair & Beard Specialist", status: "available", eta: "Now" },
+      { name: "Senior Barber", role: "Grooming Specialist", status: "finishing", eta: "10 min" },
+    ];
+  });
+
 export const getSalonById = createServerFn({ method: "GET" })
   .validator((d: { id: number }) => d)
   .handler(async ({ data }) => {

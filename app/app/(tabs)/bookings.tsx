@@ -1,16 +1,50 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme';
 import { Card } from '../../src/components/Card';
 
 export default function BookingsScreen() {
-  const [hasActiveQueue, setHasActiveQueue] = useState(true);
+  const queryClient = useQueryClient();
 
-  const mockPastBookings = [
-    { id: 1, salonName: 'Lakme Salon Patia', service: 'Haircut & Styling', date: 'Yesterday, 4:30 PM', price: '₹450', status: 'Completed' },
-    { id: 2, salonName: 'Toni&Guy Essensuals', service: 'Beard Trim & Facial', date: '18 Jul 2026', price: '₹750', status: 'Completed' },
-    { id: 3, salonName: 'Green Trends Unisex Salon', service: 'Hair Color', date: '10 Jul 2026', price: '₹1,200', status: 'Completed' },
-  ];
+  // Live Active Queue from DB
+  const { data: activeData, isLoading: loadingActive } = useQuery({
+    queryKey: ['active-queue'],
+    queryFn: async () => {
+      const res = await apiClient.get('/user/active-queue');
+      return res.data.activeQueue;
+    },
+    refetchInterval: 5000,
+  });
+
+  // Live History from DB
+  const { data: historyData, isLoading: loadingHistory } = useQuery({
+    queryKey: ['user-history'],
+    queryFn: async () => {
+      const res = await apiClient.get('/user/history');
+      return res.data.history || [];
+    },
+    refetchInterval: 10000,
+  });
+
+  // Cancel Queue Mutation
+  const cancelMutation = useMutation({
+    mutationFn: async (queueId: number) => {
+      await apiClient.post('/queue/cancel', { queueId });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['active-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['user-history'] });
+      queryClient.invalidateQueries({ queryKey: ['salons'] });
+    },
+    onError: () => {
+      Alert.alert('Error', 'Could not cancel queue');
+    },
+  });
+
+  const activeQueue = activeData;
+  const historyList = historyData || [];
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -19,19 +53,23 @@ export default function BookingsScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* Active Live Queue Tracking Card (Swiggy / Zomato order style) */}
-        {hasActiveQueue ? (
+        {/* Active Live Queue Tracking Card */}
+        {loadingActive ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          </View>
+        ) : activeQueue ? (
           <View style={styles.activeCard}>
             <View style={styles.activeCardHeader}>
               <View style={styles.liveBadge}>
                 <View style={styles.pulseDot} />
                 <Text style={styles.liveBadgeText}>LIVE QUEUE TRACKER</Text>
               </View>
-              <Text style={styles.tokenText}>Token #24</Text>
+              <Text style={styles.tokenText}>Token #{activeQueue.tokenNumber || 12}</Text>
             </View>
 
-            <Text style={styles.salonTitle}>Lakme Salon Patia</Text>
-            <Text style={styles.salonSub}>Patia, Bhubaneswar • Haircut & Beard Grooming</Text>
+            <Text style={styles.salonTitle}>{activeQueue.salonName}</Text>
+            <Text style={styles.salonSub}>{activeQueue.address || 'Bhubaneswar'}</Text>
 
             {/* Stepper Progress Bar */}
             <View style={styles.progressSection}>
@@ -48,9 +86,9 @@ export default function BookingsScreen() {
                 </View>
                 <View style={styles.stepItem}>
                   <View style={[styles.stepDot, styles.stepDotActive]}>
-                    <Text style={styles.stepActiveNum}>2</Text>
+                    <Text style={styles.stepActiveNum}>{activeQueue.position}</Text>
                   </View>
-                  <Text style={styles.stepLabelActive}>In Queue (#2)</Text>
+                  <Text style={styles.stepLabelActive}>In Queue (#{activeQueue.position})</Text>
                 </View>
                 <View style={styles.stepItem}>
                   <View style={styles.stepDot}>
@@ -65,41 +103,52 @@ export default function BookingsScreen() {
             <View style={styles.etaBox}>
               <View>
                 <Text style={styles.etaBoxLabel}>ESTIMATED WALK-IN</Text>
-                <Text style={styles.etaBoxValue}>8 mins left</Text>
+                <Text style={styles.etaBoxValue}>{activeQueue.waitTime || 5} mins left</Text>
               </View>
               <TouchableOpacity
                 style={styles.cancelBtn}
-                onPress={() => setHasActiveQueue(false)}
+                onPress={() => cancelMutation.mutate(activeQueue.id)}
+                disabled={cancelMutation.isPending}
               >
-                <Text style={styles.cancelBtnText}>Leave Queue</Text>
+                <Text style={styles.cancelBtnText}>
+                  {cancelMutation.isPending ? 'Cancelling...' : 'Leave Queue'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           <Card style={styles.emptyCard}>
             <Text style={styles.emptyIcon}>⏳</Text>
-            <Text style={styles.emptyTitle}>No Active Queues</Text>
-            <Text style={styles.emptyText}>Join a queue from the Home screen to track your live status here.</Text>
+            <Text style={styles.emptyTitle}>No Active Queue</Text>
+            <Text style={styles.emptyText}>Join a queue from the Home screen to track your live status in real time.</Text>
           </Card>
         )}
 
-        {/* Past Visit History */}
+        {/* Past Visit History from Database */}
         <Text style={styles.sectionHeading}>PAST VISITS & RECENT ACTIVITY</Text>
-        {mockPastBookings.map((item) => (
-          <Card key={item.id} style={styles.historyCard}>
-            <View style={styles.historyTop}>
-              <Text style={styles.historySalon}>{item.salonName}</Text>
-              <Text style={styles.historyPrice}>{item.price}</Text>
-            </View>
-            <Text style={styles.historyService}>{item.service}</Text>
-            <View style={styles.historyFooter}>
-              <Text style={styles.historyDate}>🗓️ {item.date}</Text>
-              <View style={styles.completedBadge}>
-                <Text style={styles.completedText}>✓ {item.status}</Text>
-              </View>
-            </View>
+        {loadingHistory ? (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        ) : historyList.length === 0 ? (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No past visit history found in database.</Text>
           </Card>
-        ))}
+        ) : (
+          historyList.map((item: any) => (
+            <Card key={item.id} style={styles.historyCard}>
+              <View style={styles.historyTop}>
+                <Text style={styles.historySalon}>{item.salonName}</Text>
+                <Text style={styles.historyPrice}>{item.price}</Text>
+              </View>
+              <Text style={styles.historyService}>{item.service}</Text>
+              <View style={styles.historyFooter}>
+                <Text style={styles.historyDate}>🗓️ {item.date}</Text>
+                <View style={styles.completedBadge}>
+                  <Text style={styles.completedText}>✓ {item.status}</Text>
+                </View>
+              </View>
+            </Card>
+          ))
+        )}
       </View>
 
       <View style={{ height: 40 }} />

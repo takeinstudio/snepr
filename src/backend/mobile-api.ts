@@ -3,8 +3,8 @@ import cors from "cors";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
-import { users, salons, queues } from "./db/schema";
-import { eq, and } from "drizzle-orm";
+import { users, salons, queues, bookings } from "./db/schema";
+import { eq, and, desc } from "drizzle-orm";
 
 const app = express();
 app.use(cors());
@@ -90,10 +90,10 @@ app.post("/api/queue/join", async (req, res) => {
 
     const [newQueue] = await db.insert(queues).values({
       salonId,
-      customerName: customerName || "Mobile Customer",
-      customerPhone: customerPhone || "9999999999",
+      tokenNumber: Math.floor(10 + Math.random() * 90),
       position,
       status: "waiting",
+      estimatedWaitMins: estimatedWait,
     }).returning();
 
     res.json({
@@ -102,6 +102,65 @@ app.post("/api/queue/join", async (req, res) => {
       position,
       estimatedWait,
     });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── CANCEL QUEUE (DB LIVE UPDATE) ───
+app.post("/api/queue/cancel", async (req, res) => {
+  try {
+    const { queueId } = req.body;
+    if (queueId) {
+      await db.update(queues).set({ status: "cancelled" }).where(eq(queues.id, queueId));
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── GET ACTIVE QUEUE FROM DB ───
+app.get("/api/user/active-queue", async (req, res) => {
+  try {
+    const activeList = await db.select().from(queues).where(eq(queues.status, "waiting")).orderBy(desc(queues.createdAt)).limit(1);
+    if (activeList.length === 0) {
+      return res.json({ activeQueue: null });
+    }
+    const q = activeList[0];
+    const [salon] = await db.select().from(salons).where(eq(salons.id, q.salonId));
+    res.json({
+      activeQueue: {
+        id: q.id,
+        tokenNumber: q.tokenNumber || 12,
+        salonName: salon ? salon.name : "Salon",
+        address: salon ? salon.address : "",
+        position: q.position || 1,
+        waitTime: q.estimatedWaitMins || 5,
+        status: q.status,
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ─── GET USER HISTORY FROM DB ───
+app.get("/api/user/history", async (req, res) => {
+  try {
+    const historyList = await db.select().from(queues).orderBy(desc(queues.createdAt)).limit(5);
+    const formatted = await Promise.all(historyList.map(async (q) => {
+      const [salon] = await db.select().from(salons).where(eq(salons.id, q.salonId));
+      return {
+        id: q.id,
+        salonName: salon ? salon.name : "Salon",
+        service: salon ? `${salon.category || 'Haircut'} Service` : "Salon Service",
+        date: new Date(q.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
+        price: "₹350",
+        status: q.status === "waiting" ? "Active" : q.status === "cancelled" ? "Cancelled" : "Completed",
+      };
+    }));
+    res.json({ history: formatted });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

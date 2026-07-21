@@ -10,6 +10,7 @@ import {
 } from "@/components/snepr/QueueCard";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { getSalons, getSalonStylists } from "@/backend/functions/salons";
 
 export const Route = createFileRoute("/_marketing/")({
   head: () => ({
@@ -35,7 +36,7 @@ function Hero() {
         <div className="rise-in">
           <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-[12px] font-medium text-ink-soft">
             <span className="live-dot" />
-            <span>Live in 240+ salons</span>
+            <span>Live salons in Bhubaneswar</span>
           </div>
           <div className="font-display text-[44px] font-bold leading-[0.95] tracking-tight text-ink sm:text-[64px] md:text-[76px]">
             Know before
@@ -92,6 +93,24 @@ function Hero() {
 }
 
 function HeroQueueCard() {
+  const [salons, setSalons] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await getSalons({ data: {} });
+        if (data && Array.isArray(data)) {
+          setSalons(data.slice(0, 3));
+        }
+      } catch (e) {
+        console.error("Error loading hero salons", e);
+      }
+    }
+    load();
+  }, []);
+
+  const topSalon = salons[0] || { name: "The Scissors Edge", waitTime: 5 };
+
   return (
     <div className="rise-in relative mx-auto w-full max-w-md">
       {/* Ambient green blob */}
@@ -103,37 +122,53 @@ function HeroQueueCard() {
         {/* Search bar */}
         <div className="flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-3">
           <Search className="h-4 w-4 text-ink-soft" />
-          <span className="text-[13.5px] text-ink-soft">Salons near Indiranagar</span>
+          <span className="text-[13.5px] text-ink-soft">Salons near Bhubaneswar</span>
           <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10.5px] font-semibold text-primary">
             LIVE
           </span>
         </div>
 
         <div className="mt-3 space-y-2">
-          <SalonRow
-            initial="U"
-            name="Urban Chop"
-            meta="0.4 km · Men's · ₹300"
-            wait="5 min"
-            status="available"
-            tint="bg-primary/15"
-          />
-          <SalonRow
-            initial="L"
-            name="Looks Salon"
-            meta="0.8 km · Unisex · ₹450"
-            wait="18 min"
-            status="finishing"
-            tint="bg-status-finishing/15"
-          />
-          <SalonRow
-            initial="B"
-            name="Barbershop Co."
-            meta="1.2 km · Men's · ₹250"
-            wait="42 min"
-            status="busy"
-            tint="bg-status-busy/15"
-          />
+          {salons.length > 0 ? (
+            salons.map((s, idx) => (
+              <SalonRow
+                key={s.id || idx}
+                initial={s.name ? s.name[0] : "S"}
+                name={s.name}
+                meta={`${s.category || 'Salon'} · ⭐ ${s.rating || '4.8'}`}
+                wait={`${s.waitTime || 5} min`}
+                status={s.queueStatus || "available"}
+                tint={idx === 0 ? "bg-primary/15" : idx === 1 ? "bg-status-finishing/15" : "bg-status-busy/15"}
+              />
+            ))
+          ) : (
+            <>
+              <SalonRow
+                initial="T"
+                name="The Scissors Edge"
+                meta="Saheed Nagar · Unisex · ⭐ 4.8"
+                wait="5 min"
+                status="available"
+                tint="bg-primary/15"
+              />
+              <SalonRow
+                initial="U"
+                name="Urban Look Salon"
+                meta="Jaydev Vihar · Men's · ⭐ 4.6"
+                wait="10 min"
+                status="finishing"
+                tint="bg-status-finishing/15"
+              />
+              <SalonRow
+                initial="S"
+                name="Style Studio by Jawed Habib"
+                meta="Patia · Premium · ⭐ 4.7"
+                wait="15 min"
+                status="busy"
+                tint="bg-status-busy/15"
+              />
+            </>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-4 py-3">
@@ -141,14 +176,14 @@ function HeroQueueCard() {
             Fastest chair right now
           </div>
           <div className="font-mono-tabular text-[15px] font-bold text-primary">
-            5 min · Urban Chop
+            {topSalon.waitTime || 5} min · {topSalon.name}
           </div>
         </div>
       </div>
 
       {/* Floating pill */}
       <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-ink px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white shadow-card">
-        Updated 2s ago
+        Synced with Live DB
       </div>
     </div>
   );
@@ -284,25 +319,27 @@ function MiniWalkIn() {
 
 /* ---------------------- Live Queue Showcase ---------------------- */
 function LiveShowcase() {
-  const [tick, setTick] = useState(23);
+  const [tick, setTick] = useState(15);
+  const [barbers, setBarbers] = useState<any[]>([]);
+
   useEffect(() => {
+    async function loadStylists() {
+      try {
+        const data = await getSalonStylists();
+        if (data && Array.isArray(data)) {
+          setBarbers(data);
+        }
+      } catch (e) {
+        console.error("Error loading stylists", e);
+      }
+    }
+    loadStylists();
+
     const t = setInterval(() => {
-      setTick((n) => (n <= 1 ? 24 : n - 1));
-    }, 4000);
+      setTick((n) => (n <= 1 ? 15 : n - 1));
+    }, 5000);
     return () => clearInterval(t);
   }, []);
-
-  const barbers: {
-    name: string;
-    role: string;
-    status: QueueStatus;
-    eta: string;
-  }[] = [
-    { name: "Arjun", role: "Sr. Stylist", status: "available", eta: "Now" },
-    { name: "Priya", role: "Color specialist", status: "finishing", eta: "8 min" },
-    { name: "Rahul", role: "Barber", status: "busy", eta: "34 min" },
-    { name: "Zoya", role: "Sr. Stylist", status: "available", eta: "Now" },
-  ];
 
   return (
     <section id="live" className="px-4 py-16 sm:px-6 sm:py-24">
@@ -330,7 +367,7 @@ function LiveShowcase() {
               </div>
               <div className="min-w-0">
                 <div className="truncate text-[16px] font-bold text-ink sm:text-[18px]">
-                  Urban Chop · Indiranagar
+                  The Scissors Edge · Bhubaneswar
                 </div>
                 <div className="flex items-center gap-2 text-[12.5px] text-ink-soft">
                   <span className="live-dot" />

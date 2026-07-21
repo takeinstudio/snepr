@@ -34,6 +34,37 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const styleId = 'custom-scrollbar-style';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+          ::-webkit-scrollbar {
+            width: 6px !important;
+            height: 6px !important;
+          }
+          ::-webkit-scrollbar-track {
+            background: #FAF7F2 !important;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: #7A4B29 !important;
+            border-radius: 9999px !important;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: #5C371D !important;
+          }
+          * {
+            scrollbar-width: thin !important;
+            scrollbar-color: #7A4B29 #FAF7F2 !important;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
+
   if (!loaded) {
     return null;
   }
