@@ -5,7 +5,7 @@ export default defineConfig({
     server: { 
       preset: 'static',
       prerender: {
-        routes: ['/', '/app', '/app/admin', '/app/queue', '/app/checkout', '/app/activity', '/app/profile']
+        routes: ['/', '/app', '/admin', '/app/queue', '/app/checkout', '/app/activity', '/app/profile']
       }
     },
   },

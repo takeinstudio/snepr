@@ -18,12 +18,12 @@ import { Route as MarketingContactRouteImport } from './routes/_marketing/contac
 import { Route as MarketingFaqRouteImport } from './routes/_marketing/faq'
 import { Route as MarketingPrivacyPolicyRouteImport } from './routes/_marketing/privacy-policy'
 import { Route as MarketingTermsOfServiceRouteImport } from './routes/_marketing/terms-of-service'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppCheckoutRouteImport } from './routes/app/checkout'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppQueueRouteImport } from './routes/app/queue'
-import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
 import { Route as AppSalonIdRouteImport } from './routes/app/salon.$id'
 
 const MarketingRoute = MarketingRouteImport.update({
@@ -70,6 +70,11 @@ const MarketingTermsOfServiceRoute = MarketingTermsOfServiceRouteImport.update({
   path: '/terms-of-service',
   getParentRoute: () => MarketingRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -95,11 +100,6 @@ const AppQueueRoute = AppQueueRouteImport.update({
   path: '/queue',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppSalonIdRoute = AppSalonIdRouteImport.update({
   id: '/salon/$id',
   path: '/salon/$id',
@@ -119,9 +119,9 @@ export interface FileRoutesByFullPath {
   '/app/checkout': typeof AppCheckoutRoute
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
-  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof MarketingAboutRoute
@@ -135,9 +135,9 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
   '/': typeof MarketingIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
-  '/app/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -154,9 +154,9 @@ export interface FileRoutesById {
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
   '/_marketing/': typeof MarketingIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
-  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -173,9 +173,9 @@ export interface FileRouteTypes {
     | '/app/checkout'
     | '/app/profile'
     | '/app/queue'
+    | '/admin/'
     | '/app/'
     | '/app/salon/$id'
-    | '/app/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -189,9 +189,9 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/queue'
     | '/'
+    | '/admin'
     | '/app'
     | '/app/salon/$id'
-    | '/app/admin'
   id:
     | '__root__'
     | '/_marketing'
@@ -207,14 +207,15 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/queue'
     | '/_marketing/'
+    | '/admin/'
     | '/app/'
     | '/app/salon/$id'
-    | '/app/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  AdminIndexRoute: typeof AdminIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -282,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingTermsOfServiceRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -315,13 +323,6 @@ declare module '@tanstack/react-router' {
       path: '/queue'
       fullPath: '/app/queue'
       preLoaderRoute: typeof AppQueueRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/admin/': {
-      id: '/app/admin/'
-      path: '/admin'
-      fullPath: '/app/admin/'
-      preLoaderRoute: typeof AppAdminIndexRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/salon/$id': {
@@ -365,7 +366,6 @@ interface AppRouteChildren {
   AppQueueRoute: typeof AppQueueRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSalonIdRoute: typeof AppSalonIdRoute
-  AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -375,7 +375,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppQueueRoute: AppQueueRoute,
   AppIndexRoute: AppIndexRoute,
   AppSalonIdRoute: AppSalonIdRoute,
-  AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -383,6 +382,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
