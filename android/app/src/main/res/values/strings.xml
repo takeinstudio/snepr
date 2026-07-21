@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Snepr</string>
+    <string name="title_activity_main">Snepr</string>
+    <string name="package_name">in.snepr.app</string>
+    <string name="custom_url_scheme">in.snepr.app</string>
+</resources>
