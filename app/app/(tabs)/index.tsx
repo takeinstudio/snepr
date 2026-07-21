@@ -106,46 +106,32 @@ export default function ExploreScreen() {
     },
   });
 
-  // Real Reverse Geocoding Location Access Handler
+  // High Accuracy Location Access Handler
   const requestLocation = async () => {
     setIsLocating(true);
     try {
-      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            setUserCoords({ lat, lng });
-
-            try {
-              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
-              const data = await res.json();
-              const area = data.address?.suburb || data.address?.neighbourhood || data.address?.road || data.address?.city_district || data.address?.city || 'Bhubaneswar';
-              setLocationName(`${area}, Bhubaneswar`);
-            } catch {
-              setLocationName('Patia, Bhubaneswar');
-            }
-            setIsLocating(false);
-          },
-          () => {
-            setLocationName('Patia, Bhubaneswar');
-            setIsLocating(false);
-          },
-          { enableHighAccuracy: true, timeout: 10000 }
-        );
-      } else {
+      if (Platform.OS !== 'web') {
         const Location = require('expo-location');
         let { status } = await Location.requestForegroundPermissionsAsync();
         if (status === 'granted') {
-          let loc = await Location.getCurrentPositionAsync({});
+          try {
+            const hasServices = await Location.hasServicesEnabledAsync();
+            if (!hasServices) {
+              await Location.enableNetworkProviderAsync();
+            }
+          } catch {}
+
+          let loc = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Highest,
+          });
           const lat = loc.coords.latitude;
           const lng = loc.coords.longitude;
           setUserCoords({ lat, lng });
 
           try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
             const data = await res.json();
-            const area = data.address?.suburb || data.address?.neighbourhood || data.address?.road || data.address?.city_district || data.address?.city || 'Bhubaneswar';
+            const area = data.locality || data.city || data.principalSubdivision || 'Bhubaneswar';
             setLocationName(`${area}, Bhubaneswar`);
           } catch {
             setLocationName('Patia, Bhubaneswar');
@@ -154,6 +140,31 @@ export default function ExploreScreen() {
           setLocationName('Patia, Bhubaneswar');
         }
         setIsLocating(false);
+      } else {
+        if (typeof navigator !== 'undefined' && navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+              setUserCoords({ lat, lng });
+
+              try {
+                const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                const data = await res.json();
+                const area = data.locality || data.city || data.principalSubdivision || 'Bhubaneswar';
+                setLocationName(`${area}, Bhubaneswar`);
+              } catch {
+                setLocationName('Patia, Bhubaneswar');
+              }
+              setIsLocating(false);
+            },
+            () => {
+              setLocationName('Patia, Bhubaneswar');
+              setIsLocating(false);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        }
       }
     } catch (e) {
       setLocationName('Patia, Bhubaneswar');
@@ -985,13 +996,17 @@ const styles = StyleSheet.create({
   gridOneTapBtn: {
     backgroundColor: theme.colors.primary,
     paddingVertical: 9,
+    paddingHorizontal: 8,
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
   },
   gridOneTapText: {
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '900',
+    textAlign: 'center',
   },
   floatingActiveBar: {
     position: 'absolute',
