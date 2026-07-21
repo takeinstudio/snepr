@@ -179,6 +179,8 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { AppPromoManager } from "@/components/promo/AppPromoManager";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [showSplash, setShowSplash] = useState(true);
@@ -200,6 +202,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AppPromoManager />
+
       <div className="flex min-h-screen flex-col bg-background font-sans text-ink selection:bg-primary/20">
         <main className="flex-1">
           <Outlet />

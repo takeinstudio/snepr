@@ -7,8 +7,7 @@ import {
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
 import { useLocation } from "../../hooks/useLocation";
-import { calculateDistance, formatDistance } from "../../lib/distance";
-import { toast } from "sonner";
+import { ContextualAppCTA } from "@/components/promo/ContextualAppCTA";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -191,12 +190,18 @@ function LiveDashboard() {
         </div>
 
         {/* ─── Live Status Ticker Banner ─── */}
-        <div className="flex items-center gap-2.5 bg-[#FAF2EA] border border-[#E8D6C5] px-4 py-2.5 rounded-2xl mb-6 text-xs text-[#1C1613]">
+        <div className="flex items-center gap-2.5 bg-[#FAF2EA] border border-[#E8D6C5] px-4 py-2.5 rounded-2xl mb-4 text-xs text-[#1C1613]">
           <span className="w-2 h-2 rounded-full bg-[#7A4B29] animate-pulse" />
           <span>
             <strong className="font-extrabold text-[#7A4B29]">Real-time chair updates</strong> • {selectedLocality}
           </span>
         </div>
+
+        {/* ─── Contextual Mobile App Promotion ─── */}
+        <ContextualAppCTA
+          message="Track your turn live in the Snepr app"
+          className="mb-6"
+        />
 
         {/* ─── Quick Category Grid ─── */}
         <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">

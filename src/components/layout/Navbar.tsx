@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
-import { toast } from "sonner";
+import { openNativeApp } from "@/config/app-promo";
 
 export function Navbar() {
   return (
@@ -36,16 +36,7 @@ export function Navbar() {
         </nav>
         <button
           type="button"
-          onClick={() => {
-            toast.promise(
-              new Promise((resolve) => setTimeout(resolve, 800)),
-              {
-                loading: "Opening app interface...",
-                success: "Snepr web app coming soon!",
-                error: "Failed to open app",
-              }
-            );
-          }}
+          onClick={() => openNativeApp()}
           className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[14px] font-bold text-primary-foreground shadow-green press press-active hover:bg-primary-hover sm:h-11 sm:px-6 sm:text-[15px]"
         >
           Open app
