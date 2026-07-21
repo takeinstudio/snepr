@@ -194,30 +194,29 @@ function LiveDashboard() {
         <div className="flex items-center gap-2.5 bg-[#FAF2EA] border border-[#E8D6C5] px-4 py-2.5 rounded-2xl mb-6 text-xs text-[#1C1613]">
           <span className="w-2 h-2 rounded-full bg-[#7A4B29] animate-pulse" />
           <span>
-            🔥 <strong className="font-extrabold text-[#7A4B29]">Real-time chair updates</strong> • {selectedLocality}
+            <strong className="font-extrabold text-[#7A4B29]">Real-time chair updates</strong> • {selectedLocality}
           </span>
         </div>
 
         {/* ─── Quick Category Grid ─── */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-3 mb-6 no-scrollbar">
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setActiveCategory(cat.name)}
               className={cn(
-                "flex flex-col items-center justify-center shrink-0 w-20 py-2.5 px-2 rounded-2xl border transition-all",
+                "px-4 py-2 rounded-full text-xs font-extrabold border transition-all shrink-0",
                 activeCategory === cat.name
-                  ? "bg-[#7A4B29] text-white border-[#7A4B29] shadow-sm scale-105"
+                  ? "bg-[#7A4B29] text-white border-[#7A4B29] shadow-sm"
                   : "bg-white text-[#6E6761] border-[#E8E2D9] hover:bg-[#FAF7F2]"
               )}
             >
-              <span className="text-xl mb-1">{cat.icon}</span>
-              <span className="text-[11px] font-bold truncate max-w-full">{cat.name}</span>
+              {cat.name}
             </button>
           ))}
         </div>
 
-        {/* ─── Filter Pills ─── */}
+        {/* ─── Filter Chips ─── */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar">
           <button
             onClick={() => setActiveFilter("all")}
@@ -228,7 +227,7 @@ function LiveDashboard() {
                 : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
             )}
           >
-            ✨ All Salons ({salons.length})
+            All Salons ({salons.length})
           </button>
           <button
             onClick={() => setActiveFilter("shortest")}
@@ -239,7 +238,7 @@ function LiveDashboard() {
                 : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
             )}
           >
-            ⚡ Shortest Wait (&le;15 min)
+            Shortest Wait (&le;15 min)
           </button>
           <button
             onClick={() => setActiveFilter("available")}
@@ -250,7 +249,7 @@ function LiveDashboard() {
                 : "bg-white text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF7F2]"
             )}
           >
-            🟢 Available Now
+            Available Now
           </button>
         </div>
 

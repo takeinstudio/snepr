@@ -43,7 +43,11 @@ export default function RootLayout() {
         style.innerHTML = `
           ::-webkit-scrollbar {
             width: 6px !important;
-            height: 6px !important;
+            height: 0px !important;
+          }
+          ::-webkit-scrollbar:horizontal {
+            display: none !important;
+            height: 0px !important;
           }
           ::-webkit-scrollbar-track {
             background: #FAF7F2 !important;
@@ -54,10 +58,6 @@ export default function RootLayout() {
           }
           ::-webkit-scrollbar-thumb:hover {
             background: #5C371D !important;
-          }
-          * {
-            scrollbar-width: thin !important;
-            scrollbar-color: #7A4B29 #FAF7F2 !important;
           }
         `;
         document.head.appendChild(style);

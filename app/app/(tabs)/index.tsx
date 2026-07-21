@@ -11,7 +11,6 @@ import {
   Platform,
   Alert,
   Modal,
-  Image,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSalons } from '../../src/api/salons';
@@ -62,17 +61,27 @@ export default function ExploreScreen() {
   const [locationName, setLocationName] = useState('Patia, Bhubaneswar');
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>({
     lat: 20.3533,
-    lng: 85.8266, // Default Patia Bhubaneswar coords for distance comparison
+    lng: 85.8266,
   });
   const [isLocating, setIsLocating] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState<any | null>(null);
   const [activeQueue, setActiveQueue] = useState<ActiveQueue | null>(null);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
+
+  const localities = [
+    'Patia, Bhubaneswar',
+    'Silicon Institute, Bhubaneswar',
+    'KIIT Square, Bhubaneswar',
+    'Saheed Nagar, Bhubaneswar',
+    'Jaydev Vihar, Bhubaneswar',
+    'Janpath, Bhubaneswar'
+  ];
 
   // Live Database Fetch
-  const { data: dbSalons, isLoading, error, refetch } = useQuery({
+  const { data: dbSalons, isLoading, refetch } = useQuery({
     queryKey: ['salons'],
     queryFn: getSalons,
-    refetchInterval: 10000, // Auto-refresh live data every 10s
+    refetchInterval: 10000,
   });
 
   // Join Queue Mutation
@@ -97,37 +106,53 @@ export default function ExploreScreen() {
     },
   });
 
-  const [locationModalVisible, setLocationModalVisible] = useState(false);
-  const localities = ['Patia, Bhubaneswar', 'Saheed Nagar, Bhubaneswar', 'Jaydev Vihar, Bhubaneswar', 'Janpath, Bhubaneswar', 'KIIT Square, Bhubaneswar'];
-
-  // Location Access Handler
+  // Real Reverse Geocoding Location Access Handler
   const requestLocation = async () => {
     setIsLocating(true);
     try {
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            setLocationName('GPS Location');
+          async (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            setUserCoords({ lat, lng });
+
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+              const data = await res.json();
+              const area = data.address?.suburb || data.address?.neighbourhood || data.address?.road || data.address?.city_district || data.address?.city || 'Bhubaneswar';
+              setLocationName(`${area}, Bhubaneswar`);
+            } catch {
+              setLocationName('Patia, Bhubaneswar');
+            }
             setIsLocating(false);
           },
           () => {
             setLocationName('Patia, Bhubaneswar');
             setIsLocating(false);
           },
-          { enableHighAccuracy: true, timeout: 8000 }
+          { enableHighAccuracy: true, timeout: 10000 }
         );
       } else {
         const Location = require('expo-location');
         let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
+        if (status === 'granted') {
+          let loc = await Location.getCurrentPositionAsync({});
+          const lat = loc.coords.latitude;
+          const lng = loc.coords.longitude;
+          setUserCoords({ lat, lng });
+
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+            const data = await res.json();
+            const area = data.address?.suburb || data.address?.neighbourhood || data.address?.road || data.address?.city_district || data.address?.city || 'Bhubaneswar';
+            setLocationName(`${area}, Bhubaneswar`);
+          } catch {
+            setLocationName('Patia, Bhubaneswar');
+          }
+        } else {
           setLocationName('Patia, Bhubaneswar');
-          setIsLocating(false);
-          return;
         }
-        let loc = await Location.getCurrentPositionAsync({});
-        setUserCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-        setLocationName('GPS Location');
         setIsLocating(false);
       }
     } catch (e) {
@@ -144,7 +169,7 @@ export default function ExploreScreen() {
   const salonList = (dbSalons || []).map((s: any) => {
     let distanceKm: number | null = null;
     if (userCoords && s.latitude && s.longitude) {
-      distanceKm = calculateDistanceKm(userCoords.lat, userCoords.lng, s.latitude, s.longitude);
+      distanceKm = calculateDistanceKm(userCoords.lat, userCoords.lng, parseFloat(s.latitude), parseFloat(s.longitude));
     }
     return {
       ...s,
@@ -154,12 +179,12 @@ export default function ExploreScreen() {
   });
 
   const categories = [
-    { id: 'all', name: 'All', icon: '✨' },
-    { id: 'haircut', name: 'Haircut', icon: '💇‍♂️' },
-    { id: 'beard', name: 'Beard Trim', icon: '🧔' },
-    { id: 'facial', name: 'Facial & Spa', icon: '💆‍♀️' },
-    { id: 'color', name: 'Hair Color', icon: '🎨' },
-    { id: 'styling', name: 'Styling', icon: '✂️' },
+    { id: 'all', name: 'All' },
+    { id: 'haircut', name: 'Haircut' },
+    { id: 'beard', name: 'Beard Trim' },
+    { id: 'facial', name: 'Facial & Spa' },
+    { id: 'color', name: 'Hair Color' },
+    { id: 'styling', name: 'Styling' },
   ];
 
   const filteredSalons = salonList.filter((s: any) => {
@@ -182,7 +207,6 @@ export default function ExploreScreen() {
     return true;
   });
 
-  // Sort by shortest distance if distance available, else wait time
   filteredSalons.sort((a: any, b: any) => {
     if (a.distanceKm !== null && b.distanceKm !== null) {
       return a.distanceKm - b.distanceKm;
@@ -206,7 +230,6 @@ export default function ExploreScreen() {
 
           {/* Quick ETA Badge */}
           <View style={styles.etaPill}>
-            <Text style={styles.lightningIcon}>⚡</Text>
             <View>
               <Text style={styles.etaTime}>LIVE QUEUES</Text>
               <Text style={styles.etaLabel}>{salonList.length} SALONS</Text>
@@ -218,7 +241,7 @@ export default function ExploreScreen() {
         <View style={styles.locationBarContainer}>
           <TouchableOpacity style={styles.locationSelectorFull} onPress={() => setLocationModalVisible(true)} activeOpacity={0.8}>
             <View style={styles.locationPinBadge}>
-              <Text style={styles.pinIcon}>📍</Text>
+              <Text style={styles.pinIcon}>LOC</Text>
             </View>
             <View style={{ flex: 1 }}>
               <View style={styles.locationTitleRow}>
@@ -226,7 +249,7 @@ export default function ExploreScreen() {
                 <Text style={styles.locationArrow}>▾</Text>
               </View>
               {isLocating ? (
-                <Text style={styles.locationAddress}>Locating current position...</Text>
+                <Text style={styles.locationAddress}>Locating position...</Text>
               ) : (
                 <Text style={styles.locationAddress} numberOfLines={1}>{locationName}</Text>
               )}
@@ -237,7 +260,6 @@ export default function ExploreScreen() {
         {/* ─── Search Bar ─── */}
         <View style={styles.searchContainer}>
           <View style={styles.searchBar}>
-            <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
               placeholder="Search salons, services, categories..."
@@ -257,7 +279,7 @@ export default function ExploreScreen() {
         <View style={styles.tickerBanner}>
           <View style={styles.tickerLiveDot} />
           <Text style={styles.tickerText}>
-            🔥 <Text style={styles.tickerBold}>Real-time chair updates</Text> • Patia, Bhubaneswar
+            <Text style={styles.tickerBold}>Real-time chair updates</Text> • {locationName}
           </Text>
         </View>
 
@@ -268,15 +290,12 @@ export default function ExploreScreen() {
               <TouchableOpacity
                 key={cat.id}
                 style={[
-                  styles.categoryCircleCard,
-                  activeCategory === cat.name && styles.categoryCircleActive,
+                  styles.categoryPillCard,
+                  activeCategory === cat.name && styles.categoryPillActive,
                 ]}
                 onPress={() => setActiveCategory(cat.name)}
                 activeOpacity={0.8}
               >
-                <View style={styles.categoryIconBg}>
-                  <Text style={styles.categoryEmoji}>{cat.icon}</Text>
-                </View>
                 <Text
                   style={[
                     styles.categoryName,
@@ -302,7 +321,7 @@ export default function ExploreScreen() {
             onPress={() => setActiveFilter('all')}
           >
             <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>
-              ✨ All Salons ({salonList.length})
+              All Salons ({salonList.length})
             </Text>
           </TouchableOpacity>
 
@@ -311,7 +330,7 @@ export default function ExploreScreen() {
             onPress={() => setActiveFilter('shortest')}
           >
             <Text style={[styles.filterText, activeFilter === 'shortest' && styles.filterTextActive]}>
-              ⚡ Shortest Wait
+              Shortest Wait
             </Text>
           </TouchableOpacity>
 
@@ -320,7 +339,7 @@ export default function ExploreScreen() {
             onPress={() => setActiveFilter('available')}
           >
             <Text style={[styles.filterText, activeFilter === 'available' && styles.filterTextActive]}>
-              🟢 Available Now
+              Available Now
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -329,10 +348,7 @@ export default function ExploreScreen() {
         {featuredSalons.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={styles.lightningIcon}>⚡</Text>
-                <Text style={styles.sectionTitle}>SHORTEST WAIT NEAR YOU</Text>
-              </View>
+              <Text style={styles.sectionTitle}>SHORTEST WAIT NEAR YOU</Text>
               <View style={styles.sectionDot} />
             </View>
 
@@ -361,15 +377,14 @@ export default function ExploreScreen() {
                       {item.name}
                     </Text>
                     <Text style={styles.featuredSubText} numberOfLines={1}>
-                      {item.category || 'Salon'} · ⭐ {item.rating || '4.8'}
+                      {item.category || 'Salon'} · {item.rating || '4.8'} ★
                     </Text>
 
                     <Text style={styles.liveQueueSizeText}>
-                      👥 {item.waitingCount} in queue
+                      {item.waitingCount} waiting
                     </Text>
                   </TouchableOpacity>
 
-                  {/* 1-Tap Direct Queue Join */}
                   <TouchableOpacity
                     style={styles.oneTapBtn}
                     onPress={() => joinQueueMutation.mutate(item.id)}
@@ -420,15 +435,14 @@ export default function ExploreScreen() {
                       <Text style={styles.gridWaitTime}>
                         <Text style={styles.gridWaitBold}>{item.waitTime}</Text> min
                       </Text>
-                      <Text style={styles.gridRating}>⭐ {item.rating || '4.8'}</Text>
+                      <Text style={styles.gridRating}>{item.rating || '4.8'} ★</Text>
                     </View>
 
                     <Text style={styles.gridQueueCount}>
-                      👥 {item.waitingCount} in queue
+                      {item.waitingCount} waiting
                     </Text>
                   </TouchableOpacity>
 
-                  {/* 1-Tap Direct Queue Join */}
                   <TouchableOpacity
                     style={styles.gridOneTapBtn}
                     onPress={() => joinQueueMutation.mutate(item.id)}
@@ -452,9 +466,7 @@ export default function ExploreScreen() {
       {activeQueue && (
         <View style={styles.floatingActiveBar}>
           <View style={styles.activeBarLeft}>
-            <View style={styles.activeBarPulse}>
-              <Text style={styles.activeBarPulseText}>⏱️</Text>
-            </View>
+            <View style={styles.activeBarPulse} />
             <View style={{ flex: 1 }}>
               <Text style={styles.activeBarTitle} numberOfLines={1}>
                 Queue Confirmed • {activeQueue.salonName}
@@ -494,9 +506,9 @@ export default function ExploreScreen() {
                 </View>
 
                 <Text style={styles.modalTitle}>{selectedSalon.name}</Text>
-                <Text style={styles.modalAddress}>📍 {selectedSalon.address || 'Address not listed'}</Text>
+                <Text style={styles.modalAddress}>{selectedSalon.address || 'Address not listed'}</Text>
                 <Text style={styles.modalCategory}>
-                  {selectedSalon.category || 'Salon'} • ⭐ {selectedSalon.rating || '4.8'} • 📍 {selectedSalon.formattedDistance}
+                  {selectedSalon.category || 'Salon'} • {selectedSalon.rating || '4.8'} ★ • {selectedSalon.formattedDistance}
                 </Text>
 
                 <View style={styles.modalStatsBox}>
@@ -506,7 +518,7 @@ export default function ExploreScreen() {
                   </View>
                   <View style={styles.modalStat}>
                     <Text style={styles.modalStatLabel}>Queue Size</Text>
-                    <Text style={styles.modalStatVal}>{selectedSalon.waitingCount} people</Text>
+                    <Text style={styles.modalStatVal}>{selectedSalon.waitingCount} waiting</Text>
                   </View>
                   <View style={styles.modalStat}>
                     <Text style={styles.modalStatLabel}>Live Distance</Text>
@@ -548,27 +560,24 @@ export default function ExploreScreen() {
 
             <TouchableOpacity
               style={{
-                flexDirection: 'row',
-                alignItems: 'center',
                 backgroundColor: theme.colors.primary,
                 padding: 14,
                 borderRadius: 14,
                 marginBottom: 16,
-                gap: 8,
+                alignItems: 'center',
               }}
               onPress={() => {
                 setLocationModalVisible(false);
                 requestLocation();
               }}
             >
-              <Text style={{ fontSize: 16, color: '#FFF' }}>🎯</Text>
               <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFF' }}>
                 Use Current GPS Location
               </Text>
             </TouchableOpacity>
 
-            <Text style={{ fontSize: 12, fontWeight: '800', color: theme.colors.textMuted, marginBottom: 8 }}>
-              POPULAR LOCALITIES IN BHUBANESWAR
+            <Text style={{ fontSize: 11, fontWeight: '800', color: theme.colors.textMuted, marginBottom: 8, letterSpacing: 0.5 }}>
+              LOCALITIES IN BHUBANESWAR
             </Text>
 
             {localities.map((item) => (
@@ -585,7 +594,7 @@ export default function ExploreScreen() {
                 }}
               >
                 <Text style={{ fontSize: 14, fontWeight: '700', color: theme.colors.text }}>
-                  📍 {item}
+                  {item}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -601,12 +610,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-  },
   topBrandHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -614,10 +617,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.md,
     paddingBottom: 4,
-  },
-  headerLogoLarge: {
-    width: 140,
-    height: 48,
   },
   locationBarContainer: {
     paddingHorizontal: theme.spacing.lg,
@@ -636,15 +635,17 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   locationPinBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
     backgroundColor: '#F5EDE4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   pinIcon: {
-    fontSize: 15,
+    fontSize: 9,
+    fontWeight: '900',
+    color: theme.colors.primary,
   },
   locationTitleRow: {
     flexDirection: 'row',
@@ -667,17 +668,10 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
   },
   etaPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: theme.colors.primary,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
     borderRadius: theme.radii.full,
-    gap: 6,
-  },
-  lightningIcon: {
-    fontSize: 12,
-    color: '#FFD700',
   },
   etaTime: {
     fontSize: 10,
@@ -704,14 +698,6 @@ const styles = StyleSheet.create({
     borderRadius: theme.radii.lg,
     paddingHorizontal: 14,
     height: 44,
-    gap: 8,
-    ...Platform.select({
-      web: { boxShadow: '0px 2px 8px rgba(44, 26, 14, 0.03)' },
-      default: { elevation: 1 },
-    }),
-  },
-  searchIcon: {
-    fontSize: 14,
   },
   searchInput: {
     flex: 1,
@@ -754,38 +740,28 @@ const styles = StyleSheet.create({
   },
   categoryScroll: {
     paddingHorizontal: theme.spacing.lg,
-    gap: 12,
+    gap: 8,
   },
-  categoryCircleCard: {
-    alignItems: 'center',
-    width: 68,
-  },
-  categoryCircleActive: {
-    transform: [{ scale: 1.05 }],
-  },
-  categoryIconBg: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+  categoryPillCard: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: theme.radii.full,
     backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: theme.colors.border,
-    marginBottom: 6,
   },
-  categoryEmoji: {
-    fontSize: 24,
+  categoryPillActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   categoryName: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: theme.colors.textMuted,
-    textAlign: 'center',
   },
   categoryNameActive: {
     fontWeight: '800',
-    color: theme.colors.primary,
+    color: '#FFFFFF',
   },
   filterScroll: {
     paddingHorizontal: theme.spacing.lg,
@@ -844,30 +820,34 @@ const styles = StyleSheet.create({
     gap: theme.spacing.md,
   },
   featuredCard: {
-    width: 165,
+    width: 175,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: 'space-between',
+    borderColor: '#EFE7DC',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   initialAvatar: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 12,
     backgroundColor: '#F5EDE4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   initialText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: theme.colors.primary,
   },
@@ -875,8 +855,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F5EDE4',
-    paddingHorizontal: 7,
-    paddingVertical: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: theme.radii.full,
     gap: 4,
   },
@@ -893,16 +873,17 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   waitTimeValue: {
-    fontSize: 38,
+    fontSize: 30,
     fontWeight: '900',
     color: theme.colors.text,
-    lineHeight: 40,
+    lineHeight: 32,
   },
   waitTimeLabel: {
     fontSize: 11,
     fontWeight: '600',
     color: theme.colors.textMuted,
-    marginBottom: 4,
+    marginTop: 2,
+    marginBottom: 6,
   },
   featuredSalonName: {
     fontSize: 13,
@@ -923,13 +904,13 @@ const styles = StyleSheet.create({
   },
   oneTapBtn: {
     backgroundColor: theme.colors.primary,
-    paddingVertical: 8,
-    borderRadius: theme.radii.full,
+    paddingVertical: 9,
+    borderRadius: 12,
     alignItems: 'center',
   },
   oneTapBtnText: {
     color: '#FFFFFF',
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,
   },
@@ -943,11 +924,16 @@ const styles = StyleSheet.create({
   gridCard: {
     width: COLUMN_WIDTH,
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 22,
     padding: 14,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: '#EFE7DC',
     justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   statusDotIndicator: {
     width: 7,
@@ -994,18 +980,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     color: theme.colors.primary,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   gridOneTapBtn: {
-    backgroundColor: '#F5EDE4',
-    paddingVertical: 7,
-    borderRadius: theme.radii.full,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 9,
+    borderRadius: 12,
     alignItems: 'center',
   },
   gridOneTapText: {
-    color: theme.colors.primary,
+    color: '#FFFFFF',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   floatingActiveBar: {
     position: 'absolute',
@@ -1018,10 +1004,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    ...Platform.select({
-      web: { boxShadow: '0px 8px 24px rgba(44, 26, 14, 0.3)' },
-      default: { elevation: 8 },
-    }),
   },
   activeBarLeft: {
     flexDirection: 'row',
@@ -1030,15 +1012,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   activeBarPulse: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeBarPulseText: {
-    fontSize: 16,
   },
   activeBarTitle: {
     color: '#FFFFFF',
