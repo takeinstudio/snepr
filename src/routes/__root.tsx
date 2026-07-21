@@ -10,7 +10,6 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -37,9 +36,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -82,23 +78,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
       { name: "theme-color", content: "#00C853" },
-      { title: "Snepr — Know before you go" },
+      { title: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
       {
         name: "description",
         content:
-          "Snepr shows live salon wait times so you never wait in line again. Join the queue from your phone and walk straight in.",
+          "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn.",
       },
       { name: "author", content: "Snepr" },
-      { property: "og:title", content: "Snepr — Know before you go" },
+      { property: "og:site_name", content: "Snepr" },
+      { property: "og:title", content: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
       {
         property: "og:description",
         content:
-          "Live salon queues and wait times. Join from your phone and walk straight in.",
+          "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://snepr.in" },
+      { property: "og:image", content: "https://snepr.in/android-chrome-512x512.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
+      { name: "twitter:description", content: "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn." },
+      { name: "twitter:image", content: "https://snepr.in/android-chrome-512x512.png" },
     ],
     links: [
+      { rel: "canonical", href: "https://snepr.in" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       {
@@ -110,7 +113,30 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;600;700&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon", sizes: "16x16 32x32 48x48" },
+      { rel: "icon", href: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
+      { rel: "icon", href: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
+      { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#00C853" },
+      { rel: "manifest", href: "/site.webmanifest" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "Snepr",
+          "operatingSystem": "Any",
+          "applicationCategory": "LifestyleApplication",
+          "description": "Live salon wait times and queue joining application.",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          }
+        }),
+      }
     ],
   }),
   shellComponent: RootShell,
