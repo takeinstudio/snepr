@@ -47,13 +47,10 @@ function Hero() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <a
-              href="#get"
-              className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover"
-            >
+            <button onClick={() => toast.success("Thanks for your interest! We will contact you soon.")} className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover">
               <MapPin className="h-5 w-5" />
               Find a salon near you
-            </a>
+            </button>
             <a
               href="#how"
               className="inline-flex h-14 items-center gap-2 rounded-2xl border border-border bg-card px-5 text-[15px] font-semibold text-ink press press-active hover:bg-surface"
@@ -435,19 +432,13 @@ function ForOwners() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <a
-                href="#get"
-                className="inline-flex h-13 items-center gap-2 rounded-2xl bg-ink px-6 py-3.5 text-[15px] font-bold text-white press press-active hover:bg-ink/90"
-              >
+              <button onClick={() => toast.success("Thanks for your interest! We will contact you soon.")} className="inline-flex h-13 items-center gap-2 rounded-2xl bg-ink px-6 py-3.5 text-[15px] font-bold text-white press press-active hover:bg-ink/90">
                 List your salon
                 <ArrowRight className="h-4 w-4" />
-              </a>
-              <a
-                href="#get"
-                className="inline-flex h-13 items-center gap-2 rounded-2xl border border-ink/25 bg-transparent px-5 py-3.5 text-[14px] font-semibold text-ink press press-active hover:bg-ink/5"
-              >
+              </button>
+              <button onClick={() => toast.success("Thanks for your interest! We will contact you soon.")} className="inline-flex h-13 items-center gap-2 rounded-2xl border border-ink/25 bg-transparent px-5 py-3.5 text-[14px] font-semibold text-ink press press-active hover:bg-ink/5">
                 See partner terms
-              </a>
+              </button>
             </div>
           </div>
 
@@ -561,63 +552,6 @@ function GetSnepr() {
   );
 }
 
-/* ---------------------- Footer ---------------------- */
-function Footer() {
-  const cols = [
-    {
-      title: "Product",
-      links: ["How it works", "Live queue", "For salons", "Pricing"],
-    },
-    {
-      title: "Company",
-      links: ["About", "Careers", "Press", "Contact"],
-    },
-    {
-      title: "Legal",
-      links: ["Privacy", "Terms", "Cookies"],
-    },
-  ];
-  return (
-    <footer
-      className="border-t border-border px-4 pb-12 pt-12 sm:px-6"
-      style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 96px)" }}
-    >
-      <div className="mx-auto max-w-6xl">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
-            <SneprWordmark height={28} color="#101012" />
-            <p className="mt-4 max-w-xs text-[13.5px] leading-relaxed text-ink-soft">
-              Live salon queues and wait times. Know before you go.
-            </p>
-          </div>
-          {cols.map((c) => (
-            <div key={c.title}>
-              <div className="mb-3 text-[11.5px] font-semibold uppercase tracking-widest text-ink-soft">
-                {c.title}
-              </div>
-              <ul className="space-y-2.5">
-                {c.links.map((l) => (
-                  <li key={l}>
-                    <a
-                      href="#"
-                      className="text-[14px] font-medium text-ink transition hover:text-primary"
-                    >
-                      {l}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 text-[12.5px] text-ink-soft">
-          <span>© {new Date().getFullYear()} Snepr. All rights reserved.</span>
-          <span>Made for people who hate waiting.</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
 
 /* ---------------------- Sticky mobile CTA ---------------------- */
 function StickyMobileCTA() {
@@ -626,13 +560,10 @@ function StickyMobileCTA() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:hidden"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
     >
-      <a
-        href="#get"
-        className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-green press press-active"
-      >
+      <button onClick={() => toast.success("Thanks for your interest! We will contact you soon.")} className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-green press press-active">
         <MapPin className="h-5 w-5" />
         Find a salon near you
-      </a>
+      </button>
     </div>
   );
 }
@@ -648,7 +579,6 @@ function SneprLanding() {
         <ForOwners />
         <GetSnepr />
       </main>
-      <Footer />
       <StickyMobileCTA />
     </div>
   );

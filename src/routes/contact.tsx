@@ -77,7 +77,7 @@ function ContactPage() {
                     <FormItem>
                       <FormLabel>Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John Doe" {...field} />
+                        <Input placeholder="Your Name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -90,7 +90,7 @@ function ContactPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="john@example.com" type="email" {...field} />
+                        <Input placeholder="you@example.com" type="email" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,7 +163,7 @@ function ContactPage() {
                 <MapPin className="mt-1 h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="font-medium text-ink">HQ</p>
-                  <p>Indiranagar, Bangalore<br />Karnataka, India 560038</p>
+                  <p>Bhubaneswar<br />Odisha, India</p>
                 </div>
               </div>
             </div>

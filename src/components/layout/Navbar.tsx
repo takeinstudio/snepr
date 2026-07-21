@@ -15,6 +15,9 @@ export function Navbar() {
           <SneprWordmark height={26} color="#101012" className="hidden sm:block" />
         </Link>
         <nav className="hidden items-center gap-6 text-[14px] font-medium text-ink-soft md:flex lg:gap-8">
+          <Link to="/" className="transition hover:text-ink">
+            Home
+          </Link>
           <Link to="/" hash="how" className="transition hover:text-ink">
             How it works
           </Link>
