@@ -78,7 +78,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
-      { name: "theme-color", content: "#00C853" },
+      { name: "color-scheme", content: "light only" },
+      { name: "darkreader-lock", content: "true" },
+      { name: "theme-color", content: "#FFFFFF" },
       { title: "Live Salon Queue App | Snepr" },
       {
         name: "description",
@@ -118,7 +120,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
       { rel: "icon", href: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png", sizes: "180x180" },
-      { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#00C853" },
+      { rel: "mask-icon", href: "/safari-pinned-tab.svg", color: "#7A4B29" },
       { rel: "manifest", href: "/site.webmanifest" },
     ],
     scripts: [
@@ -164,11 +166,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="light" style={{ colorScheme: "light" }}>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="light" style={{ colorScheme: "light" }}>
         {children}
         <Scripts />
       </body>

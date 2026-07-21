@@ -2,7 +2,13 @@
 @source "../src";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+/* Lock color scheme to light only — block dark mode extensions & media queries */
+:root,
+html,
+body {
+  color-scheme: light !important;
+  forced-color-adjust: none !important;
+}
 
 @theme inline {
   --font-sans:
@@ -35,6 +41,7 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-[#7A4B29]: oklch(0.5 0.1 50);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
@@ -106,18 +113,19 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+    color-scheme: light !important;
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--color-background) !important;
+    color: var(--color-foreground) !important;
     font-family: var(--font-sans);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Safe-area padding for APK/notch */
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+    color-scheme: light !important;
   }
 
   h1,
@@ -137,6 +145,15 @@
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
     border-radius: 6px;
+  }
+}
+
+/* Force light color scheme on dark mode extensions */
+@media (prefers-color-scheme: dark) {
+  :root, html, body {
+    color-scheme: light !important;
+    background-color: #FAF8F5 !important;
+    color: #1C1613 !important;
   }
 }
 
