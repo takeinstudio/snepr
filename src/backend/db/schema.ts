@@ -66,6 +66,8 @@ export const salons = pgTable("salons", {
   location: text("location"),
   amenities: json("amenities"),
   commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default("10.00"),
+  latitude: decimal("latitude", { precision: 10, scale: 7 }),
+  longitude: decimal("longitude", { precision: 10, scale: 7 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
