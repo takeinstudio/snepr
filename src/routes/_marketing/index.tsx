@@ -14,12 +14,13 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_marketing/")({
   head: () => ({
     meta: [
-      { title: "Snepr | Know before you go" },
+      { title: "Live Salon Queues Near You | Snepr" },
       {
         name: "description",
         content:
-          "Live salon queues and wait times. Join from your phone and walk straight in.",
+          "Live salon queues and wait times. Join from your phone and walk straight in. Free for customers.",
       },
+      { rel: "canonical", href: "https://snepr.in" },
     ],
   }),
   component: SneprLanding,
@@ -48,7 +49,7 @@ function Hero() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link to="/app" className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover">
+            <Link to="/live" className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover">
               <MapPin className="h-5 w-5" />
               Find a salon near you
             </Link>
@@ -254,7 +255,7 @@ function MiniJoin() {
         </div>
       </div>
       <Link
-        to="/app"
+        to="/live"
         className="flex w-full items-center justify-center rounded-xl bg-primary py-2.5 text-[13px] font-bold text-primary-foreground press press-active"
       >
         Join queue
@@ -534,7 +535,7 @@ function GetSnepr() {
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
-            to="/app"
+            to="/live"
             className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-7 text-[16px] font-bold text-primary-foreground shadow-green press press-active hover:bg-primary-hover"
           >
             Get Snepr
@@ -564,7 +565,7 @@ function StickyMobileCTA() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:hidden"
       style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
     >
-      <Link to="/app" className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-green press press-active">
+      <Link to="/live" className="flex h-13 w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-[15px] font-bold text-primary-foreground shadow-green press press-active">
         <MapPin className="h-5 w-5" />
         Find a salon near you
       </Link>

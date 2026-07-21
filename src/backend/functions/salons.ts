@@ -23,6 +23,24 @@ export const getSalonById = createServerFn({ method: "GET" })
     return result[0] ?? null;
   });
 
+// getSalonDetails — enriched view for the salon detail page
+export const getSalonDetails = createServerFn({ method: "GET" })
+  .validator((d: number) => d)
+  .handler(async ({ data: id }) => {
+    const [salon] = await db.select().from(salons).where(eq(salons.id, id));
+    if (!salon) return null;
+
+    const waiting = await db.select().from(queues).where(
+      and(eq(queues.salonId, id), eq(queues.status, "waiting"))
+    );
+
+    return {
+      ...salon,
+      waitingCount: waiting.length,
+      estimatedWaitTimeMins: waiting.length * 15,
+    };
+  });
+
 export const createSalon = createServerFn({ method: "POST" })
   .validator((d: any) => d)
   .handler(async ({ data }) => {

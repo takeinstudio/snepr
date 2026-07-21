@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as LiveRouteImport } from './routes/live'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as MarketingAboutRouteImport } from './routes/_marketing/about'
 import { Route as MarketingClaimRouteImport } from './routes/_marketing/claim'
@@ -24,7 +25,14 @@ import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppCheckoutRouteImport } from './routes/app/checkout'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppQueueRouteImport } from './routes/app/queue'
+import { Route as LiveIndexRouteImport } from './routes/live/index'
+import { Route as LiveActivityRouteImport } from './routes/live/activity'
+import { Route as LiveCheckoutRouteImport } from './routes/live/checkout'
+import { Route as LiveProfileRouteImport } from './routes/live/profile'
+import { Route as LiveQueueRouteImport } from './routes/live/queue'
+import { Route as SalonIndexRouteImport } from './routes/salon/index'
 import { Route as AppSalonIdRouteImport } from './routes/app/salon.$id'
+import { Route as LiveSalonIdRouteImport } from './routes/live/salon.$id'
 
 const MarketingRoute = MarketingRouteImport.update({
   id: '/_marketing',
@@ -33,6 +41,11 @@ const MarketingRoute = MarketingRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingIndexRoute = MarketingIndexRouteImport.update({
@@ -100,15 +113,51 @@ const AppQueueRoute = AppQueueRouteImport.update({
   path: '/queue',
   getParentRoute: () => AppRoute,
 } as any)
+const LiveIndexRoute = LiveIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LiveRoute,
+} as any)
+const LiveActivityRoute = LiveActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => LiveRoute,
+} as any)
+const LiveCheckoutRoute = LiveCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => LiveRoute,
+} as any)
+const LiveProfileRoute = LiveProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => LiveRoute,
+} as any)
+const LiveQueueRoute = LiveQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => LiveRoute,
+} as any)
+const SalonIndexRoute = SalonIndexRouteImport.update({
+  id: '/salon/',
+  path: '/salon/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppSalonIdRoute = AppSalonIdRouteImport.update({
   id: '/salon/$id',
   path: '/salon/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const LiveSalonIdRoute = LiveSalonIdRouteImport.update({
+  id: '/salon/$id',
+  path: '/salon/$id',
+  getParentRoute: () => LiveRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/app': typeof AppRouteWithChildren
+  '/live': typeof LiveRouteWithChildren
   '/about': typeof MarketingAboutRoute
   '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
@@ -119,9 +168,16 @@ export interface FileRoutesByFullPath {
   '/app/checkout': typeof AppCheckoutRoute
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
+  '/live/activity': typeof LiveActivityRoute
+  '/live/checkout': typeof LiveCheckoutRoute
+  '/live/profile': typeof LiveProfileRoute
+  '/live/queue': typeof LiveQueueRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/live/': typeof LiveIndexRoute
+  '/salon/': typeof SalonIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/live/salon/$id': typeof LiveSalonIdRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof MarketingAboutRoute
@@ -134,15 +190,23 @@ export interface FileRoutesByTo {
   '/app/checkout': typeof AppCheckoutRoute
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
+  '/live/activity': typeof LiveActivityRoute
+  '/live/checkout': typeof LiveCheckoutRoute
+  '/live/profile': typeof LiveProfileRoute
+  '/live/queue': typeof LiveQueueRoute
   '/': typeof MarketingIndexRoute
   '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
+  '/live': typeof LiveIndexRoute
+  '/salon': typeof SalonIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/live/salon/$id': typeof LiveSalonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_marketing': typeof MarketingRouteWithChildren
   '/app': typeof AppRouteWithChildren
+  '/live': typeof LiveRouteWithChildren
   '/_marketing/about': typeof MarketingAboutRoute
   '/_marketing/claim': typeof MarketingClaimRoute
   '/_marketing/contact': typeof MarketingContactRoute
@@ -153,16 +217,24 @@ export interface FileRoutesById {
   '/app/checkout': typeof AppCheckoutRoute
   '/app/profile': typeof AppProfileRoute
   '/app/queue': typeof AppQueueRoute
+  '/live/activity': typeof LiveActivityRoute
+  '/live/checkout': typeof LiveCheckoutRoute
+  '/live/profile': typeof LiveProfileRoute
+  '/live/queue': typeof LiveQueueRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
+  '/live/': typeof LiveIndexRoute
+  '/salon/': typeof SalonIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/live/salon/$id': typeof LiveSalonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/app'
+    | '/live'
     | '/about'
     | '/claim'
     | '/contact'
@@ -173,9 +245,16 @@ export interface FileRouteTypes {
     | '/app/checkout'
     | '/app/profile'
     | '/app/queue'
+    | '/live/activity'
+    | '/live/checkout'
+    | '/live/profile'
+    | '/live/queue'
     | '/admin/'
     | '/app/'
+    | '/live/'
+    | '/salon/'
     | '/app/salon/$id'
+    | '/live/salon/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
@@ -188,14 +267,22 @@ export interface FileRouteTypes {
     | '/app/checkout'
     | '/app/profile'
     | '/app/queue'
+    | '/live/activity'
+    | '/live/checkout'
+    | '/live/profile'
+    | '/live/queue'
     | '/'
     | '/admin'
     | '/app'
+    | '/live'
+    | '/salon'
     | '/app/salon/$id'
+    | '/live/salon/$id'
   id:
     | '__root__'
     | '/_marketing'
     | '/app'
+    | '/live'
     | '/_marketing/about'
     | '/_marketing/claim'
     | '/_marketing/contact'
@@ -206,16 +293,25 @@ export interface FileRouteTypes {
     | '/app/checkout'
     | '/app/profile'
     | '/app/queue'
+    | '/live/activity'
+    | '/live/checkout'
+    | '/live/profile'
+    | '/live/queue'
     | '/_marketing/'
     | '/admin/'
     | '/app/'
+    | '/live/'
+    | '/salon/'
     | '/app/salon/$id'
+    | '/live/salon/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
+  LiveRoute: typeof LiveRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
+  SalonIndexRoute: typeof SalonIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_marketing/': {
@@ -325,12 +428,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppQueueRouteImport
       parentRoute: typeof AppRoute
     }
+    '/live/': {
+      id: '/live/'
+      path: '/'
+      fullPath: '/live/'
+      preLoaderRoute: typeof LiveIndexRouteImport
+      parentRoute: typeof LiveRoute
+    }
+    '/live/activity': {
+      id: '/live/activity'
+      path: '/activity'
+      fullPath: '/live/activity'
+      preLoaderRoute: typeof LiveActivityRouteImport
+      parentRoute: typeof LiveRoute
+    }
+    '/live/checkout': {
+      id: '/live/checkout'
+      path: '/checkout'
+      fullPath: '/live/checkout'
+      preLoaderRoute: typeof LiveCheckoutRouteImport
+      parentRoute: typeof LiveRoute
+    }
+    '/live/profile': {
+      id: '/live/profile'
+      path: '/profile'
+      fullPath: '/live/profile'
+      preLoaderRoute: typeof LiveProfileRouteImport
+      parentRoute: typeof LiveRoute
+    }
+    '/live/queue': {
+      id: '/live/queue'
+      path: '/queue'
+      fullPath: '/live/queue'
+      preLoaderRoute: typeof LiveQueueRouteImport
+      parentRoute: typeof LiveRoute
+    }
+    '/salon/': {
+      id: '/salon/'
+      path: '/salon'
+      fullPath: '/salon/'
+      preLoaderRoute: typeof SalonIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/salon/$id': {
       id: '/app/salon/$id'
       path: '/salon/$id'
       fullPath: '/app/salon/$id'
       preLoaderRoute: typeof AppSalonIdRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/live/salon/$id': {
+      id: '/live/salon/$id'
+      path: '/salon/$id'
+      fullPath: '/live/salon/$id'
+      preLoaderRoute: typeof LiveSalonIdRouteImport
+      parentRoute: typeof LiveRoute
     }
   }
 }
@@ -379,10 +531,32 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface LiveRouteChildren {
+  LiveActivityRoute: typeof LiveActivityRoute
+  LiveCheckoutRoute: typeof LiveCheckoutRoute
+  LiveProfileRoute: typeof LiveProfileRoute
+  LiveQueueRoute: typeof LiveQueueRoute
+  LiveIndexRoute: typeof LiveIndexRoute
+  LiveSalonIdRoute: typeof LiveSalonIdRoute
+}
+
+const LiveRouteChildren: LiveRouteChildren = {
+  LiveActivityRoute: LiveActivityRoute,
+  LiveCheckoutRoute: LiveCheckoutRoute,
+  LiveProfileRoute: LiveProfileRoute,
+  LiveQueueRoute: LiveQueueRoute,
+  LiveIndexRoute: LiveIndexRoute,
+  LiveSalonIdRoute: LiveSalonIdRoute,
+}
+
+const LiveRouteWithChildren = LiveRoute._addFileChildren(LiveRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   AppRoute: AppRouteWithChildren,
+  LiveRoute: LiveRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
+  SalonIndexRoute: SalonIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

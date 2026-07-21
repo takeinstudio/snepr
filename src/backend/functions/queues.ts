@@ -3,6 +3,15 @@ import { db } from "../db";
 import { queues, staff, bookings } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
+// ─── Get a single queue entry by ID (for token polling) ──────────────────────
+
+export const getQueueStatus = createServerFn({ method: "GET" })
+  .validator((d: number) => d)
+  .handler(async ({ data: queueId }) => {
+    const result = await db.select().from(queues).where(eq(queues.id, queueId));
+    return result[0] ?? null;
+  });
+
 // ─── Get live queue for a salon ───────────────────────────────────────────────
 
 export const getLiveQueue = createServerFn({ method: "GET" })
