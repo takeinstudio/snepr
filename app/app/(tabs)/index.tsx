@@ -25,9 +25,7 @@ import { SymbolView } from 'expo-symbols';
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - theme.spacing.lg * 2 - theme.spacing.md) / 2;
 
-const PRODUCTION_API_URL = 'https://snepr.in';
-const DEV_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'web' ? 'http://localhost:3001' : DEV_API_URL);
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001');
 
 const FALLBACK_SALONS = [
   {
@@ -188,11 +186,9 @@ export default function HomeScreen() {
     queryFn: async () => {
       const lat = userCoords?.lat || 20.3533;
       const lng = userCoords?.lng || 85.8266;
-
-      // 1. Primary: Try Website Production / Environment API
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
         const res = await fetch(`${API_BASE_URL}/api/salons/nearby?lat=${lat}&lng=${lng}`, {
           signal: controller.signal,
         });
@@ -202,25 +198,8 @@ export default function HomeScreen() {
           if (Array.isArray(data) && data.length > 0) return data;
         }
       } catch (e) {
-        // Fallthrough to dev API
+        // Fallback safely if network or backend is unreachable
       }
-
-      // 2. Secondary: Try Local Dev API
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500);
-        const res = await fetch(`${DEV_API_URL}/api/salons/nearby?lat=${lat}&lng=${lng}`, {
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data) && data.length > 0) return data;
-        }
-      } catch (e) {
-        // Fallthrough to static fallback
-      }
-
       return FALLBACK_SALONS;
     },
     initialData: FALLBACK_SALONS,
