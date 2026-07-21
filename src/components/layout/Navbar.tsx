@@ -9,12 +9,12 @@ export function Navbar() {
       className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/85 backdrop-blur-md"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6">
-        <Link to="/" className="flex items-center" aria-label="Snepr home">
-          <SneprWordmark height={22} color="#101012" className="sm:hidden" />
-          <SneprWordmark height={26} color="#101012" className="hidden sm:block" />
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:h-24 sm:px-6">
+        <Link to="/" className="flex items-center py-2" aria-label="Snepr home">
+          <SneprWordmark height={48} color="#101012" className="sm:hidden" />
+          <SneprWordmark height={58} color="#101012" className="hidden sm:block" />
         </Link>
-        <nav className="hidden items-center gap-6 text-[14px] font-medium text-ink-soft md:flex lg:gap-8">
+        <nav className="hidden items-center gap-6 text-[15px] font-semibold text-ink-soft md:flex lg:gap-8">
           <Link to="/" className="transition hover:text-ink">
             Home
           </Link>
@@ -46,10 +46,10 @@ export function Navbar() {
               }
             );
           }}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-[13px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover sm:h-10 sm:px-5 sm:text-[14px]"
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-primary px-5 text-[14px] font-bold text-primary-foreground shadow-green press press-active hover:bg-primary-hover sm:h-11 sm:px-6 sm:text-[15px]"
         >
           Open app
-          <ArrowRight className="h-3.5 w-3.5" />
+          <ArrowRight className="h-4 w-4" />
         </button>
       </div>
     </header>

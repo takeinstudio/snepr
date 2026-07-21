@@ -2,9 +2,6 @@ import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
   tanstackStart: {
-    ssr: false,
-    server: { 
-      preset: 'static',
-    },
+    ssr: true,
   },
 });

@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Snepr",
+    "slug": "snepr",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/snepr-icon.webp",
+    "scheme": "snepr",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#FAF7F2",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "in.snepr.app"
+    },
+    "android": {
+      "package": "in.snepr.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FAF7F2",
+        "foregroundImage": "./assets/images/snepr-icon.webp",
+        "backgroundImage": "./assets/images/snepr-icon.webp"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/snepr-icon.webp"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/snepr-icon.webp",
+          "resizeMode": "contain",
+          "backgroundColor": "#FAF7F2"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
