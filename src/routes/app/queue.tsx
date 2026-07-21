@@ -27,7 +27,7 @@ function AppQueue() {
           {/* Bottom of ticket */}
           <div className="p-6 pt-4 text-center bg-background">
             <span className="text-[13px] font-medium text-ink-soft">
-              On your way — tap when you arrive
+              On your way - tap when you arrive
             </span>
           </div>
           

@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/_marketing/terms-of-service")({
   component: TermsOfServicePage,
   head: () => ({
-    meta: [{ title: "Terms of Service — Snepr" }],
+    meta: [{ title: "Terms of Service | Snepr" }],
   }),
 });
 

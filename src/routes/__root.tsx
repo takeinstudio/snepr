@@ -79,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1",
       },
       { name: "theme-color", content: "#00C853" },
-      { title: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
+      { title: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
       {
         name: "description",
         content:
@@ -87,7 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { name: "author", content: "Snepr" },
       { property: "og:site_name", content: "Snepr" },
-      { property: "og:title", content: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
+      { property: "og:title", content: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
       {
         property: "og:description",
         content:
@@ -97,7 +97,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:url", content: "https://snepr.in" },
       { property: "og:image", content: "https://snepr.in/android-chrome-512x512.png" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Snepr — Know Before You Go | Live Salon Queue & Wait Times" },
+      { name: "twitter:title", content: "Snepr | Know Before You Go | Live Salon Queue & Wait Times" },
       { name: "twitter:description", content: "View live salon wait times, join the queue from your phone, and discover the best salons near you. Walk straight in when it's your turn." },
       { name: "twitter:image", content: "https://snepr.in/android-chrome-512x512.png" },
     ],

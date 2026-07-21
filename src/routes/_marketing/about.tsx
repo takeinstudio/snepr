@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/_marketing/about")({
   component: AboutPage,
   head: () => ({
-    meta: [{ title: "About — Snepr" }],
+    meta: [{ title: "About | Snepr" }],
   }),
 });
 

@@ -19,7 +19,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 export const Route = createFileRoute("/_marketing/contact")({
   component: ContactPage,
   head: () => ({
-    meta: [{ title: "Contact Us — Snepr" }],
+    meta: [{ title: "Contact Us | Snepr" }],
   }),
 });
 

@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/_marketing/privacy-policy")({
   component: PrivacyPolicyPage,
   head: () => ({
-    meta: [{ title: "Privacy Policy — Snepr" }],
+    meta: [{ title: "Privacy Policy | Snepr" }],
   }),
 });
 

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_marketing/")({
   head: () => ({
     meta: [
-      { title: "Snepr — Know before you go" },
+      { title: "Snepr | Know before you go" },
       {
         name: "description",
         content:
@@ -428,7 +428,7 @@ function ForOwners() {
             </h2>
             <p className="mt-5 max-w-md text-[16px] leading-relaxed text-ink/80">
               Update chair status in a single tap. We route ready-to-pay customers
-              straight to you. Commission only — zero setup, zero monthly fees.
+              straight to you. Commission only - zero setup, zero monthly fees.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">

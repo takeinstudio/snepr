@@ -11,7 +11,7 @@ import { Link } from "@tanstack/react-router";
 export const Route = createFileRoute("/_marketing/faq")({
   component: FAQPage,
   head: () => ({
-    meta: [{ title: "FAQ — Snepr" }],
+    meta: [{ title: "FAQ | Snepr" }],
   }),
 });
 
