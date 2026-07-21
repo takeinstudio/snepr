@@ -1,14 +1,9 @@
-import { defineConfig } from "vite";
-import viteReact from "@vitejs/plugin-react";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
-import tailwindcss from "@tailwindcss/vite";
-import tsConfigPaths from "vite-tsconfig-paths";
+import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 export default defineConfig({
-  plugins: [
-    TanStackRouterVite({ target: "react", autoCodeSplitting: true }),
-    viteReact(),
-    tailwindcss(),
-    tsConfigPaths(),
-  ],
+  tanstackStart: {
+    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+    // nitro/vite builds from this
+    server: { entry: "server" },
+  },
 });
