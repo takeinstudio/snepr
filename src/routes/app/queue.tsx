@@ -1,10 +1,35 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { getQueueStatus } from "../../../server/functions/queues";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/app/queue")({
   component: AppQueue,
 });
 
 function AppQueue() {
+  // Use TanStack Router's built-in search params handling
+  const search = Route.useSearch() as { queueId?: number };
+  const queueId = search.queueId;
+
+  const { data: queue, isLoading } = useQuery({
+    queryKey: ["queue", queueId],
+    queryFn: () => getQueueStatus({ data: Number(queueId) }),
+    enabled: !!queueId,
+    refetchInterval: 10000, // Refresh every 10s for live updates
+  });
+
+  if (!queueId) {
+    return <div className="p-8 text-center mt-20 text-ink-soft">No queue session found. Go back and join a queue.</div>;
+  }
+
+  if (isLoading) {
+    return <div className="p-8 text-center mt-20 text-ink-soft font-medium">Generating digital token...</div>;
+  }
+
+  if (!queue) {
+    return <div className="p-8 text-center mt-20 text-ink-soft">Invalid or expired token.</div>;
+  }
+
   return (
     <div className="flex flex-col h-full bg-surface-2">
       <div className="flex items-center gap-3 p-4 bg-background">
@@ -21,13 +46,13 @@ function AppQueue() {
           <div className="p-8 pb-4 text-center border-b-2 border-dashed border-border/60">
             <p className="text-xs font-bold text-ink-soft uppercase tracking-wider mb-2">Token Number</p>
             <span className="text-[72px] font-display font-bold tracking-tighter text-ink leading-none block">
-              425
+              {queue.tokenNumber}
             </span>
           </div>
           {/* Bottom of ticket */}
           <div className="p-6 pt-4 text-center bg-background">
             <span className="text-[13px] font-medium text-ink-soft">
-              On your way - tap when you arrive
+              {queue.status === 'completed' ? 'Your appointment is finished' : 'On your way - tap when you arrive'}
             </span>
           </div>
           
@@ -40,12 +65,14 @@ function AppQueue() {
       <div className="bg-background mt-auto p-6 pt-8 rounded-t-[32px] shadow-[0_-4px_24px_rgba(0,0,0,0.03)] flex flex-col gap-8">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-wider text-ink-soft px-1">
-            <span>Far</span>
-            <span>Approaching</span>
-            <span className="text-primary">Arrived</span>
+            <span className={queue.status === 'waiting' ? 'text-ink' : ''}>Waiting</span>
+            <span className={queue.status === 'in-progress' ? 'text-primary' : ''}>In Chair</span>
+            <span className={queue.status === 'completed' ? 'text-primary' : ''}>Done</span>
           </div>
           <div className="relative h-3 w-full rounded-full bg-surface-2 overflow-hidden shadow-inner">
-            <div className="absolute left-0 top-0 h-full w-3/4 bg-primary rounded-full" />
+            <div className={`absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-1000 ${
+              queue.status === 'completed' ? 'w-full' : queue.status === 'in-progress' ? 'w-2/3' : 'w-1/3'
+            }`} />
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 
@@ -7,11 +7,14 @@ export const Route = createFileRoute("/_marketing")({
 });
 
 function MarketingLayout() {
+  const location = useLocation();
+  const isHypePage = location.pathname === "/";
+
   return (
     <>
-      <Navbar />
+      {!isHypePage && <Navbar />}
       <Outlet />
-      <Footer />
+      {!isHypePage && <Footer />}
     </>
   );
 }

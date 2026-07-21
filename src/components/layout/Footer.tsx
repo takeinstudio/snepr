@@ -17,22 +17,27 @@ export function Footer() {
           
           <div>
             <h3 className="mb-4 text-[14px] font-bold uppercase tracking-wider text-ink">
-              Product
+              Customers
             </h3>
             <ul className="flex flex-col gap-3 text-[14px] text-ink-soft">
               <li>
-                <Link to="/" hash="how" className="transition hover:text-ink">
-                  How it works
+                <Link to="/app" className="transition hover:text-ink">
+                  Find Salons
                 </Link>
               </li>
               <li>
-                <Link to="/" hash="live" className="transition hover:text-ink">
-                  Live queue
+                <Link to="/app" className="transition hover:text-ink">
+                  Join Live Queue
                 </Link>
               </li>
               <li>
-                <Link to="/faq" className="transition hover:text-ink">
-                  FAQ
+                <Link to="/app" className="transition hover:text-ink">
+                  Book Appointment
+                </Link>
+              </li>
+              <li>
+                <Link to="/app" className="transition hover:text-ink">
+                  My Bookings
                 </Link>
               </li>
             </ul>
@@ -40,12 +45,50 @@ export function Footer() {
           
           <div>
             <h3 className="mb-4 text-[14px] font-bold uppercase tracking-wider text-ink">
-              Company
+              Businesses
+            </h3>
+            <ul className="flex flex-col gap-3 text-[14px] text-ink-soft">
+              <li>
+                <Link to="/list-salon" className="transition hover:text-ink">
+                  List Your Salon
+                </Link>
+              </li>
+              <li>
+                <Link to="/claim" className="transition font-semibold text-primary hover:text-primary-hover">
+                  Claim Your Salon
+                </Link>
+              </li>
+              <li>
+                <Link to="/partner-dashboard" className="transition hover:text-ink">
+                  Partner Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="transition hover:text-ink">
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link to="/partner-terms" className="transition hover:text-ink">
+                  Partner Terms
+                </Link>
+              </li>
+              <li>
+                <Link to="/faq" className="transition hover:text-ink">
+                  Help Center
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h3 className="mb-4 text-[14px] font-bold uppercase tracking-wider text-ink">
+              Company & Legal
             </h3>
             <ul className="flex flex-col gap-3 text-[14px] text-ink-soft">
               <li>
                 <Link to="/about" className="transition hover:text-ink">
-                  About
+                  About Us
                 </Link>
               </li>
               <li>
@@ -53,14 +96,6 @@ export function Footer() {
                   Contact
                 </Link>
               </li>
-            </ul>
-          </div>
-          
-          <div>
-            <h3 className="mb-4 text-[14px] font-bold uppercase tracking-wider text-ink">
-              Legal
-            </h3>
-            <ul className="flex flex-col gap-3 text-[14px] text-ink-soft">
               <li>
                 <Link to="/privacy-policy" className="transition hover:text-ink">
                   Privacy Policy

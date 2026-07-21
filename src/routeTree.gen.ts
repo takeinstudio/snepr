@@ -13,6 +13,7 @@ import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as MarketingAboutRouteImport } from './routes/_marketing/about'
+import { Route as MarketingClaimRouteImport } from './routes/_marketing/claim'
 import { Route as MarketingContactRouteImport } from './routes/_marketing/contact'
 import { Route as MarketingFaqRouteImport } from './routes/_marketing/faq'
 import { Route as MarketingPrivacyPolicyRouteImport } from './routes/_marketing/privacy-policy'
@@ -22,6 +23,7 @@ import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppCheckoutRouteImport } from './routes/app/checkout'
 import { Route as AppProfileRouteImport } from './routes/app/profile'
 import { Route as AppQueueRouteImport } from './routes/app/queue'
+import { Route as AppAdminIndexRouteImport } from './routes/app/admin/index'
 import { Route as AppSalonIdRouteImport } from './routes/app/salon.$id'
 
 const MarketingRoute = MarketingRouteImport.update({
@@ -41,6 +43,11 @@ const MarketingIndexRoute = MarketingIndexRouteImport.update({
 const MarketingAboutRoute = MarketingAboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => MarketingRoute,
+} as any)
+const MarketingClaimRoute = MarketingClaimRouteImport.update({
+  id: '/claim',
+  path: '/claim',
   getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingContactRoute = MarketingContactRouteImport.update({
@@ -88,6 +95,11 @@ const AppQueueRoute = AppQueueRouteImport.update({
   path: '/queue',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSalonIdRoute = AppSalonIdRouteImport.update({
   id: '/salon/$id',
   path: '/salon/$id',
@@ -98,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/app': typeof AppRouteWithChildren
   '/about': typeof MarketingAboutRoute
+  '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
   '/faq': typeof MarketingFaqRoute
   '/privacy-policy': typeof MarketingPrivacyPolicyRoute
@@ -108,9 +121,11 @@ export interface FileRoutesByFullPath {
   '/app/queue': typeof AppQueueRoute
   '/app/': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/about': typeof MarketingAboutRoute
+  '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
   '/faq': typeof MarketingFaqRoute
   '/privacy-policy': typeof MarketingPrivacyPolicyRoute
@@ -122,12 +137,14 @@ export interface FileRoutesByTo {
   '/': typeof MarketingIndexRoute
   '/app': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/app/admin': typeof AppAdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_marketing': typeof MarketingRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/_marketing/about': typeof MarketingAboutRoute
+  '/_marketing/claim': typeof MarketingClaimRoute
   '/_marketing/contact': typeof MarketingContactRoute
   '/_marketing/faq': typeof MarketingFaqRoute
   '/_marketing/privacy-policy': typeof MarketingPrivacyPolicyRoute
@@ -139,6 +156,7 @@ export interface FileRoutesById {
   '/_marketing/': typeof MarketingIndexRoute
   '/app/': typeof AppIndexRoute
   '/app/salon/$id': typeof AppSalonIdRoute
+  '/app/admin/': typeof AppAdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -146,6 +164,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/about'
+    | '/claim'
     | '/contact'
     | '/faq'
     | '/privacy-policy'
@@ -156,9 +175,11 @@ export interface FileRouteTypes {
     | '/app/queue'
     | '/app/'
     | '/app/salon/$id'
+    | '/app/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/about'
+    | '/claim'
     | '/contact'
     | '/faq'
     | '/privacy-policy'
@@ -170,11 +191,13 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/app/salon/$id'
+    | '/app/admin'
   id:
     | '__root__'
     | '/_marketing'
     | '/app'
     | '/_marketing/about'
+    | '/_marketing/claim'
     | '/_marketing/contact'
     | '/_marketing/faq'
     | '/_marketing/privacy-policy'
@@ -186,6 +209,7 @@ export interface FileRouteTypes {
     | '/_marketing/'
     | '/app/'
     | '/app/salon/$id'
+    | '/app/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -221,6 +245,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof MarketingAboutRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/claim': {
+      id: '/_marketing/claim'
+      path: '/claim'
+      fullPath: '/claim'
+      preLoaderRoute: typeof MarketingClaimRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/contact': {
@@ -286,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppQueueRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/admin'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/salon/$id': {
       id: '/app/salon/$id'
       path: '/salon/$id'
@@ -298,6 +336,7 @@ declare module '@tanstack/react-router' {
 
 interface MarketingRouteChildren {
   MarketingAboutRoute: typeof MarketingAboutRoute
+  MarketingClaimRoute: typeof MarketingClaimRoute
   MarketingContactRoute: typeof MarketingContactRoute
   MarketingFaqRoute: typeof MarketingFaqRoute
   MarketingPrivacyPolicyRoute: typeof MarketingPrivacyPolicyRoute
@@ -307,6 +346,7 @@ interface MarketingRouteChildren {
 
 const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingAboutRoute: MarketingAboutRoute,
+  MarketingClaimRoute: MarketingClaimRoute,
   MarketingContactRoute: MarketingContactRoute,
   MarketingFaqRoute: MarketingFaqRoute,
   MarketingPrivacyPolicyRoute: MarketingPrivacyPolicyRoute,
@@ -325,6 +365,7 @@ interface AppRouteChildren {
   AppQueueRoute: typeof AppQueueRoute
   AppIndexRoute: typeof AppIndexRoute
   AppSalonIdRoute: typeof AppSalonIdRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -334,6 +375,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppQueueRoute: AppQueueRoute,
   AppIndexRoute: AppIndexRoute,
   AppSalonIdRoute: AppSalonIdRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
