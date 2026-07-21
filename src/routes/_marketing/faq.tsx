@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/faq")({
+export const Route = createFileRoute("/_marketing/faq")({
   component: FAQPage,
   head: () => ({
     meta: [{ title: "FAQ — Snepr" }],

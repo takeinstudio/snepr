@@ -9,159 +9,338 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AboutRouteImport } from './routes/about'
-import { Route as ContactRouteImport } from './routes/contact'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
-import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as MarketingRouteImport } from './routes/_marketing'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
+import { Route as MarketingAboutRouteImport } from './routes/_marketing/about'
+import { Route as MarketingContactRouteImport } from './routes/_marketing/contact'
+import { Route as MarketingFaqRouteImport } from './routes/_marketing/faq'
+import { Route as MarketingPrivacyPolicyRouteImport } from './routes/_marketing/privacy-policy'
+import { Route as MarketingTermsOfServiceRouteImport } from './routes/_marketing/terms-of-service'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppActivityRouteImport } from './routes/app/activity'
+import { Route as AppCheckoutRouteImport } from './routes/app/checkout'
+import { Route as AppProfileRouteImport } from './routes/app/profile'
+import { Route as AppQueueRouteImport } from './routes/app/queue'
+import { Route as AppSalonIdRouteImport } from './routes/app/salon.$id'
 
-const IndexRoute = IndexRouteImport.update({
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/_marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketingIndexRoute = MarketingIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
-const AboutRoute = AboutRouteImport.update({
+const MarketingAboutRoute = MarketingAboutRouteImport.update({
   id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
-const ContactRoute = ContactRouteImport.update({
+const MarketingContactRoute = MarketingContactRouteImport.update({
   id: '/contact',
   path: '/contact',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
-const FaqRoute = FaqRouteImport.update({
+const MarketingFaqRoute = MarketingFaqRouteImport.update({
   id: '/faq',
   path: '/faq',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
-const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+const MarketingPrivacyPolicyRoute = MarketingPrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
-const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+const MarketingTermsOfServiceRoute = MarketingTermsOfServiceRouteImport.update({
   id: '/terms-of-service',
   path: '/terms-of-service',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppActivityRoute = AppActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCheckoutRoute = AppCheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQueueRoute = AppQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSalonIdRoute = AppSalonIdRouteImport.update({
+  id: '/salon/$id',
+  path: '/salon/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
-  '/faq': typeof FaqRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/terms-of-service': typeof TermsOfServiceRoute
+  '/': typeof MarketingIndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/about': typeof MarketingAboutRoute
+  '/contact': typeof MarketingContactRoute
+  '/faq': typeof MarketingFaqRoute
+  '/privacy-policy': typeof MarketingPrivacyPolicyRoute
+  '/terms-of-service': typeof MarketingTermsOfServiceRoute
+  '/app/activity': typeof AppActivityRoute
+  '/app/checkout': typeof AppCheckoutRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/queue': typeof AppQueueRoute
+  '/app/': typeof AppIndexRoute
+  '/app/salon/$id': typeof AppSalonIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
-  '/faq': typeof FaqRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/terms-of-service': typeof TermsOfServiceRoute
+  '/about': typeof MarketingAboutRoute
+  '/contact': typeof MarketingContactRoute
+  '/faq': typeof MarketingFaqRoute
+  '/privacy-policy': typeof MarketingPrivacyPolicyRoute
+  '/terms-of-service': typeof MarketingTermsOfServiceRoute
+  '/app/activity': typeof AppActivityRoute
+  '/app/checkout': typeof AppCheckoutRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/queue': typeof AppQueueRoute
+  '/': typeof MarketingIndexRoute
+  '/app': typeof AppIndexRoute
+  '/app/salon/$id': typeof AppSalonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/contact': typeof ContactRoute
-  '/faq': typeof FaqRoute
-  '/privacy-policy': typeof PrivacyPolicyRoute
-  '/terms-of-service': typeof TermsOfServiceRoute
+  '/_marketing': typeof MarketingRouteWithChildren
+  '/app': typeof AppRouteWithChildren
+  '/_marketing/about': typeof MarketingAboutRoute
+  '/_marketing/contact': typeof MarketingContactRoute
+  '/_marketing/faq': typeof MarketingFaqRoute
+  '/_marketing/privacy-policy': typeof MarketingPrivacyPolicyRoute
+  '/_marketing/terms-of-service': typeof MarketingTermsOfServiceRoute
+  '/app/activity': typeof AppActivityRoute
+  '/app/checkout': typeof AppCheckoutRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/queue': typeof AppQueueRoute
+  '/_marketing/': typeof MarketingIndexRoute
+  '/app/': typeof AppIndexRoute
+  '/app/salon/$id': typeof AppSalonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/about'
     | '/contact'
     | '/faq'
     | '/privacy-policy'
     | '/terms-of-service'
+    | '/app/activity'
+    | '/app/checkout'
+    | '/app/profile'
+    | '/app/queue'
+    | '/app/'
+    | '/app/salon/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/about'
     | '/contact'
     | '/faq'
     | '/privacy-policy'
     | '/terms-of-service'
+    | '/app/activity'
+    | '/app/checkout'
+    | '/app/profile'
+    | '/app/queue'
+    | '/'
+    | '/app'
+    | '/app/salon/$id'
   id:
     | '__root__'
-    | '/'
-    | '/about'
-    | '/contact'
-    | '/faq'
-    | '/privacy-policy'
-    | '/terms-of-service'
+    | '/_marketing'
+    | '/app'
+    | '/_marketing/about'
+    | '/_marketing/contact'
+    | '/_marketing/faq'
+    | '/_marketing/privacy-policy'
+    | '/_marketing/terms-of-service'
+    | '/app/activity'
+    | '/app/checkout'
+    | '/app/profile'
+    | '/app/queue'
+    | '/_marketing/'
+    | '/app/'
+    | '/app/salon/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
-  ContactRoute: typeof ContactRoute
-  FaqRoute: typeof FaqRoute
-  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
-  TermsOfServiceRoute: typeof TermsOfServiceRoute
+  MarketingRoute: typeof MarketingRouteWithChildren
+  AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_marketing': {
+      id: '/_marketing'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/': {
+      id: '/_marketing/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingIndexRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/about': {
-      id: '/about'
+    '/_marketing/about': {
+      id: '/_marketing/about'
       path: '/about'
       fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingAboutRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/contact': {
-      id: '/contact'
+    '/_marketing/contact': {
+      id: '/_marketing/contact'
       path: '/contact'
       fullPath: '/contact'
-      preLoaderRoute: typeof ContactRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingContactRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/faq': {
-      id: '/faq'
+    '/_marketing/faq': {
+      id: '/_marketing/faq'
       path: '/faq'
       fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingFaqRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/privacy-policy': {
-      id: '/privacy-policy'
+    '/_marketing/privacy-policy': {
+      id: '/_marketing/privacy-policy'
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
-      preLoaderRoute: typeof PrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingPrivacyPolicyRouteImport
+      parentRoute: typeof MarketingRoute
     }
-    '/terms-of-service': {
-      id: '/terms-of-service'
+    '/_marketing/terms-of-service': {
+      id: '/_marketing/terms-of-service'
       path: '/terms-of-service'
       fullPath: '/terms-of-service'
-      preLoaderRoute: typeof TermsOfServiceRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof MarketingTermsOfServiceRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/activity': {
+      id: '/app/activity'
+      path: '/activity'
+      fullPath: '/app/activity'
+      preLoaderRoute: typeof AppActivityRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/checkout': {
+      id: '/app/checkout'
+      path: '/checkout'
+      fullPath: '/app/checkout'
+      preLoaderRoute: typeof AppCheckoutRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/queue': {
+      id: '/app/queue'
+      path: '/queue'
+      fullPath: '/app/queue'
+      preLoaderRoute: typeof AppQueueRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/salon/$id': {
+      id: '/app/salon/$id'
+      path: '/salon/$id'
+      fullPath: '/app/salon/$id'
+      preLoaderRoute: typeof AppSalonIdRouteImport
+      parentRoute: typeof AppRoute
     }
   }
 }
 
+interface MarketingRouteChildren {
+  MarketingAboutRoute: typeof MarketingAboutRoute
+  MarketingContactRoute: typeof MarketingContactRoute
+  MarketingFaqRoute: typeof MarketingFaqRoute
+  MarketingPrivacyPolicyRoute: typeof MarketingPrivacyPolicyRoute
+  MarketingTermsOfServiceRoute: typeof MarketingTermsOfServiceRoute
+  MarketingIndexRoute: typeof MarketingIndexRoute
+}
+
+const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingAboutRoute: MarketingAboutRoute,
+  MarketingContactRoute: MarketingContactRoute,
+  MarketingFaqRoute: MarketingFaqRoute,
+  MarketingPrivacyPolicyRoute: MarketingPrivacyPolicyRoute,
+  MarketingTermsOfServiceRoute: MarketingTermsOfServiceRoute,
+  MarketingIndexRoute: MarketingIndexRoute,
+}
+
+const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
+  MarketingRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppActivityRoute: typeof AppActivityRoute
+  AppCheckoutRoute: typeof AppCheckoutRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppQueueRoute: typeof AppQueueRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppSalonIdRoute: typeof AppSalonIdRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppActivityRoute: AppActivityRoute,
+  AppCheckoutRoute: AppCheckoutRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppQueueRoute: AppQueueRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppSalonIdRoute: AppSalonIdRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  ContactRoute: ContactRoute,
-  FaqRoute: FaqRoute,
-  PrivacyPolicyRoute: PrivacyPolicyRoute,
-  TermsOfServiceRoute: TermsOfServiceRoute,
+  MarketingRoute: MarketingRouteWithChildren,
+  AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

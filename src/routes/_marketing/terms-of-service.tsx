@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/terms-of-service")({
+export const Route = createFileRoute("/_marketing/terms-of-service")({
   component: TermsOfServicePage,
   head: () => ({
     meta: [{ title: "Terms of Service — Snepr" }],

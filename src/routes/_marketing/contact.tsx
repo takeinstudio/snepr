@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, MapPin, Phone } from "lucide-react";
 
-export const Route = createFileRoute("/contact")({
+export const Route = createFileRoute("/_marketing/contact")({
   component: ContactPage,
   head: () => ({
     meta: [{ title: "Contact Us — Snepr" }],

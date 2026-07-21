@@ -52,6 +52,60 @@
 
   --shadow-card:
     0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px -8px oklch(0 0 0 / 0.08);
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-3xl: 32px;
+  --radius-4xl: 40px;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-status-available: var(--status-available);
+  --color-status-finishing: var(--status-finishing);
+  --color-status-busy: var(--status-busy);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --shadow-card:
+    0 1px 2px oklch(0 0 0 / 0.04), 0 8px 24px -8px oklch(0 0 0 / 0.08);
   --shadow-elevated:
     0 2px 4px oklch(0 0 0 / 0.04), 0 24px 48px -16px oklch(0 0 0 / 0.16);
   --shadow-green:
@@ -59,37 +113,37 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0.01 260);
-  --ink: oklch(0.15 0.01 260); /* #101012-ish */
-  --ink-soft: oklch(0.42 0.01 260);
-  --surface: oklch(0.985 0.003 260);
-  --surface-2: oklch(0.965 0.005 260);
+  --background: oklch(1 0 0); /* White */
+  --foreground: oklch(0.2 0.02 45); /* Deep brown ink */
+  --ink: oklch(0.2 0.02 45);
+  --ink-soft: oklch(0.4 0.02 45);
+  --surface: oklch(0.98 0.01 70); /* Cream */
+  --surface-2: oklch(0.95 0.01 70);
 
   --card: oklch(1 0 0);
   --card-foreground: var(--ink);
   --popover: oklch(1 0 0);
   --popover-foreground: var(--ink);
 
-  /* Snepr brand green ~ #00C853 */
-  --primary: oklch(0.72 0.2 148);
+  /* Primary App Brown/Gold */
+  --primary: oklch(0.5 0.1 50); /* Premium Brown */
   --primary-foreground: oklch(1 0 0);
-  --primary-hover: oklch(0.66 0.2 148);
+  --primary-hover: oklch(0.45 0.1 50);
 
-  --secondary: oklch(0.965 0.005 260);
+  --secondary: oklch(0.95 0.01 70);
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.965 0.005 260);
-  --muted-foreground: oklch(0.5 0.01 260);
-  --accent: oklch(0.965 0.005 260);
+  --muted: oklch(0.96 0.01 70);
+  --muted-foreground: oklch(0.5 0.02 45);
+  --accent: oklch(0.96 0.01 70);
   --accent-foreground: var(--ink);
   --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0.005 260);
-  --input: oklch(0.92 0.005 260);
-  --ring: oklch(0.72 0.2 148);
+  --border: oklch(0.90 0.01 70);
+  --input: oklch(0.90 0.01 70);
+  --ring: oklch(0.5 0.1 50);
 
   /* Status colors — only for live queue elements */
-  --status-available: oklch(0.72 0.2 148); /* green — Available */
+  --status-available: oklch(0.5 0.1 50); /* Brown/Gold — Available */
   --status-finishing: oklch(0.78 0.16 75); /* amber ~ #F5A623 */
   --status-busy: oklch(0.62 0.22 25); /* red ~ #E4433D */
 

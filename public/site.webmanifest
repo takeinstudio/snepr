@@ -16,6 +16,6 @@
   "theme_color": "#00C853",
   "background_color": "#FFFFFF",
   "display": "standalone",
-  "start_url": "/",
+  "start_url": "/app",
   "orientation": "portrait"
 }

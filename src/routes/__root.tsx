@@ -1,17 +1,15 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
-  Link,
   createRootRouteWithContext,
   useRouter,
   HeadContent,
   Scripts,
+  Link,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
-import { Navbar } from "../components/layout/Navbar";
-import { Footer } from "../components/layout/Footer";
 import { Toaster } from "sonner";
 
 function NotFoundComponent() {
@@ -168,11 +166,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <div className="flex min-h-screen flex-col bg-background font-sans text-ink selection:bg-primary/20">
-        <Navbar />
         <main className="flex-1">
           <Outlet />
         </main>
-        <Footer />
       </div>
       <Toaster position="bottom-center" />
     </QueryClientProvider>

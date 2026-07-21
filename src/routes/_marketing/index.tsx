@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_marketing/")({
   head: () => ({
     meta: [
       { title: "Snepr — Know before you go" },
