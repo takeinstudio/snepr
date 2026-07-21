@@ -11,21 +11,27 @@ import {
   Platform,
   Alert,
   Modal,
+  Image,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSalons } from '../../src/api/salons';
 import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme';
 import { SneprLogo } from '../../src/components/SneprLogo';
 import { SkeletonHomeScreen } from '../../src/components/SkeletonHomeScreen';
+import { SymbolView } from 'expo-symbols';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - theme.spacing.lg * 2 - theme.spacing.md) / 2;
 
-type FilterType = 'all' | 'shortest' | 'top' | 'available';
+const API_BASE_URL = 'http://localhost:3001';
 
-interface ActiveQueue {
+interface ActiveQueueData {
+  id: string;
+  tokenNumber: number;
   salonName: string;
+  address: string;
   position: number;
   waitTime: number;
   status: string;
@@ -33,7 +39,7 @@ interface ActiveQueue {
 
 // ─── Haversine Distance Calculation ───
 function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371; // Radius of the earth in km
+  const R = 6371; // Earth radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -53,11 +59,17 @@ function formatDistance(km: number): string {
   return `${km.toFixed(1)} km away`;
 }
 
-export default function ExploreScreen() {
+const SEARCH_PLACEHOLDERS = [
+  'Search "Haircut"',
+  'Search "Beard Trim"',
+  'Search "Facial & Spa"',
+  'Search "Unisex Salon"',
+  'Search "Premium Salon"',
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [activeCategory, setActiveCategory] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState('');
   const [locationName, setLocationName] = useState('Patia, Bhubaneswar');
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>({
     lat: 20.3533,
@@ -65,8 +77,8 @@ export default function ExploreScreen() {
   });
   const [isLocating, setIsLocating] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState<any | null>(null);
-  const [activeQueue, setActiveQueue] = useState<ActiveQueue | null>(null);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
 
   const localities = [
     'Patia, Bhubaneswar',
@@ -74,15 +86,36 @@ export default function ExploreScreen() {
     'KIIT Square, Bhubaneswar',
     'Saheed Nagar, Bhubaneswar',
     'Jaydev Vihar, Bhubaneswar',
-    'Janpath, Bhubaneswar'
+    'Janpath, Bhubaneswar',
   ];
 
-  // Live Database Fetch
+  // Rotating Search Placeholder Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % SEARCH_PLACEHOLDERS.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Live Database Salons Fetch
   const { data: dbSalons, isLoading, refetch } = useQuery({
     queryKey: ['salons'],
     queryFn: getSalons,
     refetchInterval: 10000,
   });
+
+  // Active Queue Status Fetch
+  const { data: activeQueueResponse } = useQuery<{ activeQueue: ActiveQueueData | null }>({
+    queryKey: ['active-queue'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE_URL}/api/user/active-queue`);
+      if (!res.ok) return { activeQueue: null };
+      return res.json();
+    },
+    refetchInterval: 5000,
+  });
+
+  const activeQueue = activeQueueResponse?.activeQueue;
 
   // Join Queue Mutation
   const joinQueueMutation = useMutation({
@@ -90,16 +123,11 @@ export default function ExploreScreen() {
       const res = await apiClient.post('/queue/join', { salonId });
       return res.data;
     },
-    onSuccess: (data, salonId) => {
-      const targetSalon = salonList.find((s: any) => s.id === salonId);
-      setActiveQueue({
-        salonName: targetSalon?.name || 'Salon',
-        position: data.position || 1,
-        waitTime: data.estimatedWait || 0,
-        status: 'Waiting',
-      });
+    onSuccess: () => {
       setSelectedSalon(null);
       queryClient.invalidateQueries({ queryKey: ['salons'] });
+      queryClient.invalidateQueries({ queryKey: ['active-queue'] });
+      router.push('/bookings');
     },
     onError: (err: any) => {
       Alert.alert('Error', err.message || 'Failed to join queue');
@@ -129,7 +157,9 @@ export default function ExploreScreen() {
           setUserCoords({ lat, lng });
 
           try {
-            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+            const res = await fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+            );
             const data = await res.json();
             const area = data.locality || data.city || data.principalSubdivision || 'Bhubaneswar';
             setLocationName(`${area}, Bhubaneswar`);
@@ -149,7 +179,9 @@ export default function ExploreScreen() {
               setUserCoords({ lat, lng });
 
               try {
-                const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+                const res = await fetch(
+                  `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+                );
                 const data = await res.json();
                 const area = data.locality || data.city || data.principalSubdivision || 'Bhubaneswar';
                 setLocationName(`${area}, Bhubaneswar`);
@@ -176,11 +208,16 @@ export default function ExploreScreen() {
     requestLocation();
   }, []);
 
-  // Compute live distances for database salons
+  // Compute live distance & formatting
   const salonList = (dbSalons || []).map((s: any) => {
     let distanceKm: number | null = null;
     if (userCoords && s.latitude && s.longitude) {
-      distanceKm = calculateDistanceKm(userCoords.lat, userCoords.lng, parseFloat(s.latitude), parseFloat(s.longitude));
+      distanceKm = calculateDistanceKm(
+        userCoords.lat,
+        userCoords.lng,
+        parseFloat(s.latitude),
+        parseFloat(s.longitude)
+      );
     }
     return {
       ...s,
@@ -189,43 +226,22 @@ export default function ExploreScreen() {
     };
   });
 
+  // Data-Driven Discovery Lists
+  const fastestSalons = [...salonList].sort((a: any, b: any) => a.waitTime - b.waitTime).slice(0, 5);
+  const availableNowSalons = salonList.filter((s: any) => s.waitTime === 0);
+  const topRatedSalons = salonList.filter((s: any) => Number(s.rating) >= 4.7);
+  const premiumSalons = salonList.filter((s: any) =>
+    ['luxury', 'premium'].some((k) => (s.category || '').toLowerCase().includes(k))
+  );
+
   const categories = [
-    { id: 'all', name: 'All' },
-    { id: 'haircut', name: 'Haircut' },
-    { id: 'beard', name: 'Beard Trim' },
-    { id: 'facial', name: 'Facial & Spa' },
-    { id: 'color', name: 'Hair Color' },
-    { id: 'styling', name: 'Styling' },
+    { id: 'haircut', name: 'Haircut', icon: 'scissors' },
+    { id: 'beard', name: 'Beard Trim', icon: 'comb' },
+    { id: 'facial', name: 'Facial & Spa', icon: 'sparkles' },
+    { id: 'color', name: 'Hair Color', icon: 'paintpalette' },
+    { id: 'styling', name: 'Styling', icon: 'wand.and.stars' },
+    { id: 'premium', name: 'Premium', icon: 'crown' },
   ];
-
-  const filteredSalons = salonList.filter((s: any) => {
-    if (searchQuery) {
-      return (
-        s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (s.category && s.category.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-    if (
-      activeCategory !== 'All' &&
-      s.category &&
-      !s.category.toLowerCase().includes(activeCategory.toLowerCase()) &&
-      !s.name.toLowerCase().includes(activeCategory.toLowerCase())
-    ) {
-      return false;
-    }
-    if (activeFilter === 'available') return s.queueStatus === 'available';
-    if (activeFilter === 'shortest') return s.waitTime <= 15;
-    return true;
-  });
-
-  filteredSalons.sort((a: any, b: any) => {
-    if (a.distanceKm !== null && b.distanceKm !== null) {
-      return a.distanceKm - b.distanceKm;
-    }
-    return a.waitTime - b.waitTime;
-  });
-
-  const featuredSalons = [...salonList].sort((a: any, b: any) => a.waitTime - b.waitTime).slice(0, 4);
 
   if (isLoading) {
     return <SkeletonHomeScreen />;
@@ -234,177 +250,212 @@ export default function ExploreScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* ─── Compact Header ─── */}
+        <View style={styles.headerRow}>
+          <SneprLogo fontSize={30} />
 
-        {/* ─── Top Brand & ETA Header Bar ─── */}
-        <View style={styles.topBrandHeader}>
-          <SneprLogo fontSize={34} />
+          {/* Location Selector Pill */}
+          <TouchableOpacity
+            style={styles.locationPill}
+            onPress={() => setLocationModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.locationPillLabel}>SALONS NEAR</Text>
+            <View style={styles.locationPillNameRow}>
+              <Text style={styles.locationPillName} numberOfLines={1}>
+                {isLocating ? 'Locating...' : locationName.split(',')[0]}
+              </Text>
+              <Text style={styles.locationPillArrow}>▾</Text>
+            </View>
+          </TouchableOpacity>
 
-          {/* Quick ETA Badge */}
-          <View style={styles.etaPill}>
-            <View>
-              <Text style={styles.etaTime}>LIVE QUEUES</Text>
-              <Text style={styles.etaLabel}>{salonList.length} SALONS</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ─── Location Bar ─── */}
-        <View style={styles.locationBarContainer}>
-          <TouchableOpacity style={styles.locationSelectorFull} onPress={() => setLocationModalVisible(true)} activeOpacity={0.8}>
-            <View style={styles.locationPinBadge}>
-              <Text style={styles.pinIcon}>LOC</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.locationTitleRow}>
-                <Text style={styles.locationTitle}>DELIVERING TO</Text>
-                <Text style={styles.locationArrow}>▾</Text>
-              </View>
-              {isLocating ? (
-                <Text style={styles.locationAddress}>Locating position...</Text>
-              ) : (
-                <Text style={styles.locationAddress} numberOfLines={1}>{locationName}</Text>
-              )}
-            </View>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => refetch()}>
+            <SymbolView
+              name={{ ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' }}
+              tintColor={theme.colors.primary}
+              size={18}
+            />
           </TouchableOpacity>
         </View>
 
-        {/* ─── Search Bar ─── */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchBar}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search salons, services, categories..."
-              placeholderTextColor={theme.colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery !== '' && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Text style={styles.clearIcon}>✕</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        {/* ─── Active Queue Priority Card ─── */}
+        {activeQueue && (
+          <TouchableOpacity
+            style={styles.activeQueueCard}
+            onPress={() => router.push('/bookings')}
+            activeOpacity={0.9}
+          >
+            <View style={styles.activeQueueHeader}>
+              <View style={styles.livePulseDot} />
+              <Text style={styles.activeQueueTitle}>YOUR LIVE QUEUE</Text>
+              <Text style={styles.activeQueueBadge}>Position #{activeQueue.position}</Text>
+            </View>
 
-        {/* ─── Live Queue Status Ticker ─── */}
-        <View style={styles.tickerBanner}>
-          <View style={styles.tickerLiveDot} />
-          <Text style={styles.tickerText}>
-            <Text style={styles.tickerBold}>Real-time chair updates</Text> • {locationName}
+            <View style={styles.activeQueueBody}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.activeQueueSalonName}>{activeQueue.salonName}</Text>
+                <Text style={styles.activeQueueSub}>Token #{activeQueue.tokenNumber} • {activeQueue.address}</Text>
+              </View>
+              <View style={styles.activeQueueWaitBox}>
+                <Text style={styles.activeQueueWaitTime}>~{activeQueue.waitTime}m</Text>
+                <Text style={styles.activeQueueWaitLabel}>Est. Wait</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* ─── Contextual Search Bar ─── */}
+        <TouchableOpacity
+          style={styles.searchBar}
+          onPress={() => router.push('/explore')}
+          activeOpacity={0.88}
+        >
+          <SymbolView
+            name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
+            tintColor={theme.colors.textMuted}
+            size={18}
+          />
+          <Text style={styles.searchPlaceholder}>
+            {SEARCH_PLACEHOLDERS[placeholderIndex]}
+          </Text>
+        </TouchableOpacity>
+
+        {/* ─── Live Network Status Ticker ─── */}
+        <View style={styles.liveTickerBanner}>
+          <View style={styles.tickerGreenDot} />
+          <Text style={styles.liveTickerText}>
+            <Text style={styles.tickerBold}>{salonList.length} salons live near you</Text> • Real-time chair updates
           </Text>
         </View>
 
-        {/* ─── Quick Service Category Grid ─── */}
-        <View style={styles.categoriesSection}>
+        {/* ─── Service Category Grid ─── */}
+        <View style={styles.categorySection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
             {categories.map((cat) => (
               <TouchableOpacity
                 key={cat.id}
-                style={[
-                  styles.categoryPillCard,
-                  activeCategory === cat.name && styles.categoryPillActive,
-                ]}
-                onPress={() => setActiveCategory(cat.name)}
+                style={styles.categoryItemCard}
+                onPress={() => router.push('/explore')}
                 activeOpacity={0.8}
               >
-                <Text
-                  style={[
-                    styles.categoryName,
-                    activeCategory === cat.name && styles.categoryNameActive,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {cat.name}
-                </Text>
+                <View style={styles.categoryIconCircle}>
+                  <Text style={styles.categoryIconText}>{cat.name.charAt(0)}</Text>
+                </View>
+                <Text style={styles.categoryItemLabel} numberOfLines={1}>{cat.name}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* ─── Filter Chips ─── */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterScroll}
-        >
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'all' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('all')}
-          >
-            <Text style={[styles.filterText, activeFilter === 'all' && styles.filterTextActive]}>
-              All Salons ({salonList.length})
-            </Text>
-          </TouchableOpacity>
+        {/* ─── Section: Get a Chair Fastest ─── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Get a chair fastest</Text>
+              <Text style={styles.sectionSubtitle}>Lowest wait times available right now</Text>
+            </View>
+          </View>
 
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'shortest' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('shortest')}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.shelfScrollContent}
           >
-            <Text style={[styles.filterText, activeFilter === 'shortest' && styles.filterTextActive]}>
-              Shortest Wait
-            </Text>
-          </TouchableOpacity>
+            {fastestSalons.map((item: any) => (
+              <View key={item.id} style={styles.fastestCard}>
+                <TouchableOpacity onPress={() => setSelectedSalon(item)} activeOpacity={0.85}>
+                  <View style={styles.fastestCardTop}>
+                    <View style={styles.initialAvatar}>
+                      <Text style={styles.initialText}>{item.name[0]}</Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.waitPillBadge,
+                        item.waitTime === 0 ? styles.waitPillZero : styles.waitPillWait,
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.waitPillText,
+                          item.waitTime === 0 ? styles.waitPillTextZero : styles.waitPillTextWait,
+                        ]}
+                      >
+                        {item.waitTime === 0 ? 'AVAILABLE NOW' : `${item.waitTime} MIN WAIT`}
+                      </Text>
+                    </View>
+                  </View>
 
-          <TouchableOpacity
-            style={[styles.filterPill, activeFilter === 'available' && styles.filterPillActive]}
-            onPress={() => setActiveFilter('available')}
-          >
-            <Text style={[styles.filterText, activeFilter === 'available' && styles.filterTextActive]}>
-              Available Now
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+                  <Text style={styles.fastestSalonName} numberOfLines={1}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.fastestSubText} numberOfLines={1}>
+                    {item.category || 'Salon'} · ⭐ {item.rating || '4.8'} · {item.formattedDistance}
+                  </Text>
+                </TouchableOpacity>
 
-        {/* ─── Section: SHORTEST WAIT NEAR YOU ─── */}
-        {featuredSalons.length > 0 && (
+                <TouchableOpacity
+                  style={[
+                    styles.oneTapBtn,
+                    item.waitTime === 0 && styles.oneTapBtnInstant,
+                  ]}
+                  onPress={() => joinQueueMutation.mutate(item.id)}
+                  disabled={joinQueueMutation.isPending}
+                  activeOpacity={0.88}
+                >
+                  <Text style={styles.oneTapBtnText}>
+                    {joinQueueMutation.isPending
+                      ? 'JOINING...'
+                      : item.waitTime === 0
+                      ? 'JOIN NOW'
+                      : 'JOIN QUEUE'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* ─── Shelf: Available Right Now ─── */}
+        {availableNowSalons.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>SHORTEST WAIT NEAR YOU</Text>
-              <View style={styles.sectionDot} />
+              <View>
+                <Text style={styles.sectionTitle}>Available Right Now</Text>
+                <Text style={styles.sectionSubtitle}>Walk in with 0 wait time</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/explore')}>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
             </View>
 
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.carouselContainer}
+              contentContainerStyle={styles.shelfScrollContent}
             >
-              {featuredSalons.map((item: any) => (
-                <View key={item.id} style={styles.featuredCard}>
+              {availableNowSalons.map((item: any) => (
+                <View key={item.id} style={styles.shelfCard}>
                   <TouchableOpacity onPress={() => setSelectedSalon(item)} activeOpacity={0.85}>
-                    <View style={styles.cardTopRow}>
-                      <View style={styles.initialAvatar}>
-                        <Text style={styles.initialText}>{item.name[0]}</Text>
+                    <View style={styles.shelfCardHeader}>
+                      <View style={styles.initialAvatarSmall}>
+                        <Text style={styles.initialTextSmall}>{item.name[0]}</Text>
                       </View>
-                      <View style={styles.availabilityBadge}>
-                        <View style={styles.badgeDot} />
-                        <Text style={styles.badgeText}>{item.queueStatus || 'Available'}</Text>
-                      </View>
+                      <Text style={styles.readyTag}>READY</Text>
                     </View>
 
-                    <Text style={styles.waitTimeValue}>{item.waitTime}</Text>
-                    <Text style={styles.waitTimeLabel}>min wait • {item.formattedDistance}</Text>
-
-                    <Text style={styles.featuredSalonName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.featuredSubText} numberOfLines={1}>
-                      {item.category || 'Salon'} · {item.rating || '4.8'} ★
-                    </Text>
-
-                    <Text style={styles.liveQueueSizeText}>
-                      {item.waitingCount} waiting
+                    <Text style={styles.shelfSalonName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.shelfSalonSub} numberOfLines={1}>
+                      {item.formattedDistance} • ⭐ {item.rating}
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.oneTapBtn}
+                    style={styles.shelfJoinBtn}
                     onPress={() => joinQueueMutation.mutate(item.id)}
                     disabled={joinQueueMutation.isPending}
-                    activeOpacity={0.88}
+                    activeOpacity={0.85}
                   >
-                    <Text style={styles.oneTapBtnText}>
-                      {joinQueueMutation.isPending ? 'JOINING...' : 'JOIN QUEUE'}
-                    </Text>
+                    <Text style={styles.shelfJoinBtnText}>JOIN NOW</Text>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -412,89 +463,110 @@ export default function ExploreScreen() {
           </View>
         )}
 
-        {/* ─── Section: ALL SALONS NEAR YOU (2-Column Grid) ─── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>ALL SALONS NEAR YOU</Text>
-            <Text style={styles.sectionCount}>{filteredSalons.length} Salons</Text>
-          </View>
-
-          {filteredSalons.length === 0 ? (
-            <View style={{ padding: 30, alignItems: 'center' }}>
-              <Text style={{ color: theme.colors.textMuted, fontSize: 14 }}>No salons match your search or filter.</Text>
+        {/* ─── Shelf: Top Rated Near You ─── */}
+        {topRatedSalons.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View>
+                <Text style={styles.sectionTitle}>Top Rated Near You</Text>
+                <Text style={styles.sectionSubtitle}>Highly rated by local customers</Text>
+              </View>
+              <TouchableOpacity onPress={() => router.push('/explore')}>
+                <Text style={styles.seeAllText}>See all</Text>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <View style={styles.grid}>
-              {filteredSalons.map((item: any) => (
-                <View key={item.id} style={styles.gridCard}>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.shelfScrollContent}
+            >
+              {topRatedSalons.map((item: any) => (
+                <View key={item.id} style={styles.shelfCard}>
                   <TouchableOpacity onPress={() => setSelectedSalon(item)} activeOpacity={0.85}>
-                    <View style={styles.cardTopRow}>
-                      <View style={styles.initialAvatar}>
-                        <Text style={styles.initialText}>{item.name[0]}</Text>
+                    <View style={styles.shelfCardHeader}>
+                      <View style={styles.initialAvatarSmall}>
+                        <Text style={styles.initialTextSmall}>{item.name[0]}</Text>
                       </View>
-                      <View style={styles.statusDotIndicator} />
+                      <Text style={styles.ratingBadge}>⭐ {item.rating}</Text>
                     </View>
 
-                    <Text style={styles.gridSalonName} numberOfLines={2}>
-                      {item.name}
-                    </Text>
-                    <Text style={styles.gridCategory} numberOfLines={1}>
-                      {item.category || 'Salon'} • {item.formattedDistance}
-                    </Text>
-
-                    <View style={styles.gridFooter}>
-                      <Text style={styles.gridWaitTime}>
-                        <Text style={styles.gridWaitBold}>{item.waitTime}</Text> min
-                      </Text>
-                      <Text style={styles.gridRating}>{item.rating || '4.8'} ★</Text>
-                    </View>
-
-                    <Text style={styles.gridQueueCount}>
-                      {item.waitingCount} waiting
+                    <Text style={styles.shelfSalonName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.shelfSalonSub} numberOfLines={1}>
+                      {item.waitTime} min wait • {item.formattedDistance}
                     </Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={styles.gridOneTapBtn}
+                    style={styles.shelfJoinBtn}
                     onPress={() => joinQueueMutation.mutate(item.id)}
                     disabled={joinQueueMutation.isPending}
-                    activeOpacity={0.88}
+                    activeOpacity={0.85}
                   >
-                    <Text style={styles.gridOneTapText}>
-                      {joinQueueMutation.isPending ? 'Joining...' : 'Join Queue'}
-                    </Text>
+                    <Text style={styles.shelfJoinBtnText}>JOIN QUEUE</Text>
                   </TouchableOpacity>
                 </View>
               ))}
-            </View>
-          )}
-        </View>
+            </ScrollView>
+          </View>
+        )}
 
-        <View style={{ height: activeQueue ? 120 : 40 }} />
-      </ScrollView>
-
-      {/* ─── Persistent Active Queue Bottom Bar ─── */}
-      {activeQueue && (
-        <View style={styles.floatingActiveBar}>
-          <View style={styles.activeBarLeft}>
-            <View style={styles.activeBarPulse} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.activeBarTitle} numberOfLines={1}>
-                Queue Confirmed • {activeQueue.salonName}
-              </Text>
-              <Text style={styles.activeBarSub}>
-                Position #{activeQueue.position} • Est. Walk-in in {activeQueue.waitTime} mins
-              </Text>
+        {/* ─── Section: All Salons Near You (Rapid Scanning Grid) ─── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>All Salons Near You</Text>
+              <Text style={styles.sectionSubtitle}>Discover all {salonList.length} verified salons</Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.cancelQueueBtn}
-            onPress={() => setActiveQueue(null)}
-          >
-            <Text style={styles.cancelQueueText}>Cancel</Text>
-          </TouchableOpacity>
+
+          <View style={styles.grid}>
+            {salonList.map((item: any) => (
+              <View key={item.id} style={styles.gridCard}>
+                <TouchableOpacity onPress={() => setSelectedSalon(item)} activeOpacity={0.85}>
+                  <View style={styles.cardTopRow}>
+                    <View style={styles.initialAvatar}>
+                      <Text style={styles.initialText}>{item.name[0]}</Text>
+                    </View>
+                    <View style={styles.statusDotIndicator} />
+                  </View>
+
+                  <Text style={styles.gridSalonName} numberOfLines={2}>
+                    {item.name}
+                  </Text>
+                  <Text style={styles.gridCategory} numberOfLines={1}>
+                    {item.category || 'Salon'} • {item.formattedDistance}
+                  </Text>
+
+                  <View style={styles.gridFooter}>
+                    <Text style={styles.gridWaitTime}>
+                      <Text style={styles.gridWaitBold}>{item.waitTime}</Text> min
+                    </Text>
+                    <Text style={styles.gridRating}>⭐ {item.rating || '4.8'}</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.gridOneTapBtn}
+                  onPress={() => joinQueueMutation.mutate(item.id)}
+                  disabled={joinQueueMutation.isPending}
+                  activeOpacity={0.88}
+                >
+                  <Text style={styles.gridOneTapText} numberOfLines={1}>
+                    {joinQueueMutation.isPending
+                      ? 'Joining...'
+                      : item.waitTime === 0
+                      ? 'Join Now'
+                      : 'Join Queue'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
         </View>
-      )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
 
       {/* ─── Salon Detail Modal ─── */}
       <Modal
@@ -519,7 +591,7 @@ export default function ExploreScreen() {
                 <Text style={styles.modalTitle}>{selectedSalon.name}</Text>
                 <Text style={styles.modalAddress}>{selectedSalon.address || 'Address not listed'}</Text>
                 <Text style={styles.modalCategory}>
-                  {selectedSalon.category || 'Salon'} • {selectedSalon.rating || '4.8'} ★ • {selectedSalon.formattedDistance}
+                  {selectedSalon.category || 'Salon'} • ⭐ {selectedSalon.rating || '4.8'} • {selectedSalon.formattedDistance}
                 </Text>
 
                 <View style={styles.modalStatsBox}>
@@ -538,12 +610,12 @@ export default function ExploreScreen() {
                 </View>
 
                 <TouchableOpacity
-                  style={styles.joinQueueBtn}
+                  style={styles.joinQueueBtnModal}
                   activeOpacity={0.88}
                   onPress={() => joinQueueMutation.mutate(selectedSalon.id)}
                   disabled={joinQueueMutation.isPending}
                 >
-                  <Text style={styles.joinQueueText}>
+                  <Text style={styles.joinQueueTextModal}>
                     {joinQueueMutation.isPending ? 'Joining Queue...' : 'Join Live Queue Now'}
                   </Text>
                 </TouchableOpacity>
@@ -563,50 +635,38 @@ export default function ExploreScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Delivery Location</Text>
+              <Text style={styles.modalTitle}>Select Salon Location</Text>
               <TouchableOpacity onPress={() => setLocationModalVisible(false)}>
                 <Text style={styles.closeBtn}>✕</Text>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              style={{
-                backgroundColor: theme.colors.primary,
-                padding: 14,
-                borderRadius: 14,
-                marginBottom: 16,
-                alignItems: 'center',
-              }}
+              style={styles.gpsButton}
               onPress={() => {
                 setLocationModalVisible(false);
                 requestLocation();
               }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFF' }}>
+              <Text style={styles.gpsButtonText}>
                 Use Current GPS Location
               </Text>
             </TouchableOpacity>
 
-            <Text style={{ fontSize: 11, fontWeight: '800', color: theme.colors.textMuted, marginBottom: 8, letterSpacing: 0.5 }}>
+            <Text style={styles.localityHeader}>
               LOCALITIES IN BHUBANESWAR
             </Text>
 
             {localities.map((item) => (
               <TouchableOpacity
                 key={item}
-                style={{
-                  paddingVertical: 12,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#F5EDE4',
-                }}
+                style={styles.localityRow}
                 onPress={() => {
                   setLocationName(item);
                   setLocationModalVisible(false);
                 }}
               >
-                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.colors.text }}>
-                  {item}
-                </Text>
+                <Text style={styles.localityText}>{item}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -619,299 +679,290 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FAF7F2',
   },
-  topBrandHeader: {
+  headerRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.md,
-    paddingBottom: 4,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 10,
+    backgroundColor: '#FAF7F2',
   },
-  locationBarContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginTop: 4,
-    marginBottom: 6,
-  },
-  locationSelectorFull: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  locationPill: {
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.lg,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 10,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EFE7DC',
+    maxWidth: 180,
   },
-  locationPinBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: '#F5EDE4',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pinIcon: {
+  locationPillLabel: {
     fontSize: 9,
-    fontWeight: '900',
-    color: theme.colors.primary,
+    fontWeight: '800',
+    color: theme.colors.textMuted,
+    letterSpacing: 0.5,
   },
-  locationTitleRow: {
+  locationPillNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  locationTitle: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: theme.colors.textMuted,
-    letterSpacing: 0.6,
-  },
-  locationArrow: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-  },
-  locationAddress: {
-    fontSize: 13,
+  locationPillName: {
+    fontSize: 12,
     fontWeight: '800',
     color: theme.colors.text,
   },
-  etaPill: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: theme.radii.full,
+  locationPillArrow: {
+    fontSize: 10,
+    color: theme.colors.primary,
   },
-  etaTime: {
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFE7DC',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeQueueCard: {
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 10,
+    backgroundColor: theme.colors.primary,
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  activeQueueHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  livePulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4CAF50',
+  },
+  activeQueueTitle: {
     fontSize: 10,
     fontWeight: '900',
+    color: 'rgba(255, 255, 255, 0.8)',
+    letterSpacing: 0.8,
+  },
+  activeQueueBadge: {
+    marginLeft: 'auto',
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FAF7F2',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  activeQueueBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeQueueSalonName: {
+    fontSize: 16,
+    fontWeight: '900',
     color: '#FFFFFF',
-    lineHeight: 12,
   },
-  etaLabel: {
-    fontSize: 7,
+  activeQueueSub: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.75)',
+    marginTop: 2,
+  },
+  activeQueueWaitBox: {
+    alignItems: 'flex-end',
+  },
+  activeQueueWaitTime: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+  },
+  activeQueueWaitLabel: {
+    fontSize: 9,
     fontWeight: '700',
-    color: '#F5EDE4',
-    letterSpacing: 0.4,
-  },
-  searchContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    marginVertical: 6,
+    color: 'rgba(255, 255, 255, 0.75)',
+    textTransform: 'uppercase',
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
+    marginVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radii.lg,
-    paddingHorizontal: 14,
-    height: 44,
+    borderColor: '#EFE7DC',
+    gap: 10,
   },
-  searchInput: {
-    flex: 1,
+  searchPlaceholder: {
     fontSize: 14,
-    color: theme.colors.text,
-  },
-  clearIcon: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    padding: 4,
-  },
-  tickerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5EDE4',
-    marginHorizontal: theme.spacing.lg,
-    marginVertical: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: theme.radii.md,
-    gap: 8,
-  },
-  tickerLiveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.colors.primary,
-  },
-  tickerText: {
-    fontSize: 12,
-    color: theme.colors.text,
-  },
-  tickerBold: {
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
-  categoriesSection: {
-    marginTop: 6,
-    marginBottom: 10,
-  },
-  categoryScroll: {
-    paddingHorizontal: theme.spacing.lg,
-    gap: 8,
-  },
-  categoryPillCard: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: theme.radii.full,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  categoryPillActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  categoryName: {
-    fontSize: 12,
     fontWeight: '600',
     color: theme.colors.textMuted,
   },
-  categoryNameActive: {
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  filterScroll: {
-    paddingHorizontal: theme.spacing.lg,
-    gap: 8,
-    marginBottom: 10,
-  },
-  filterPill: {
+  liveTickerBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 14,
+    backgroundColor: '#F5EDE4',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: theme.radii.full,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: 12,
+    gap: 8,
   },
-  filterPillActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
+  tickerGreenDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#2E7D32',
   },
-  filterText: {
-    fontSize: 12,
-    fontWeight: '700',
+  liveTickerText: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+  },
+  tickerBold: {
+    fontWeight: '800',
     color: theme.colors.text,
   },
-  filterTextActive: {
-    color: '#FFFFFF',
+  categorySection: {
+    marginBottom: 16,
+  },
+  categoryScroll: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  categoryItemCard: {
+    alignItems: 'center',
+    width: 72,
+  },
+  categoryIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 18,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#EFE7DC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  categoryIconText: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: theme.colors.primary,
+  },
+  categoryItemLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: theme.colors.text,
+    textAlign: 'center',
   },
   section: {
-    marginTop: theme.spacing.md,
+    marginTop: 8,
+    marginBottom: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: 10,
+    paddingHorizontal: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 17,
     fontWeight: '900',
+    color: theme.colors.text,
+  },
+  sectionSubtitle: {
+    fontSize: 11,
     color: theme.colors.textMuted,
-    letterSpacing: 0.8,
+    marginTop: 2,
   },
-  sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.primary,
-  },
-  sectionCount: {
+  seeAllText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: theme.colors.textMuted,
+    fontWeight: '800',
+    color: theme.colors.primary,
   },
-  carouselContainer: {
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.md,
+  shelfScrollContent: {
+    paddingHorizontal: 20,
+    gap: 14,
   },
-  featuredCard: {
-    width: 175,
+  fastestCard: {
+    width: 180,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 14,
     borderWidth: 1,
     borderColor: '#EFE7DC',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+    justifyContent: 'space-between',
   },
-  cardTopRow: {
+  fastestCardTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
   initialAvatar: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     backgroundColor: '#F5EDE4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   initialText: {
-    fontSize: 16,
-    fontWeight: '800',
+    fontSize: 18,
+    fontWeight: '900',
     color: theme.colors.primary,
   },
-  availabilityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5EDE4',
+  waitPillBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: theme.radii.full,
-    gap: 4,
+    borderRadius: 10,
   },
-  badgeDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: theme.colors.primary,
+  waitPillZero: {
+    backgroundColor: '#E8F5E9',
   },
-  badgeText: {
+  waitPillWait: {
+    backgroundColor: '#F5EDE4',
+  },
+  waitPillText: {
     fontSize: 9,
-    fontWeight: '800',
-    color: theme.colors.primary,
-    textTransform: 'capitalize',
-  },
-  waitTimeValue: {
-    fontSize: 30,
     fontWeight: '900',
-    color: theme.colors.text,
-    lineHeight: 32,
   },
-  waitTimeLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.colors.textMuted,
-    marginTop: 2,
-    marginBottom: 6,
+  waitPillTextZero: {
+    color: '#2E7D32',
   },
-  featuredSalonName: {
-    fontSize: 13,
+  waitPillTextWait: {
+    color: theme.colors.primary,
+  },
+  fastestSalonName: {
+    fontSize: 14,
     fontWeight: '800',
     color: theme.colors.text,
+    marginBottom: 2,
   },
-  featuredSubText: {
+  fastestSubText: {
     fontSize: 11,
     color: theme.colors.textMuted,
-    marginTop: 2,
-  },
-  liveQueueSizeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   oneTapBtn: {
     backgroundColor: theme.colors.primary,
@@ -919,37 +970,103 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
+  oneTapBtnInstant: {
+    backgroundColor: '#2E7D32',
+  },
   oneTapBtnText: {
     color: '#FFFFFF',
     fontSize: 11,
     fontWeight: '900',
-    letterSpacing: 0.5,
+  },
+  shelfCard: {
+    width: 150,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#EFE7DC',
+    justifyContent: 'space-between',
+  },
+  shelfCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  initialAvatarSmall: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#F5EDE4',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initialTextSmall: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: theme.colors.primary,
+  },
+  readyTag: {
+    fontSize: 9,
+    fontWeight: '900',
+    color: '#2E7D32',
+    backgroundColor: '#E8F5E9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  ratingBadge: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: theme.colors.text,
+  },
+  shelfSalonName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: theme.colors.text,
+  },
+  shelfSalonSub: {
+    fontSize: 10,
+    color: theme.colors.textMuted,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  shelfJoinBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 7,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  shelfJoinBtnText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '900',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: theme.spacing.lg,
+    paddingHorizontal: 20,
     justifyContent: 'space-between',
-    gap: theme.spacing.md,
+    gap: 12,
   },
   gridCard: {
     width: COLUMN_WIDTH,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 20,
     padding: 14,
     borderWidth: 1,
     borderColor: '#EFE7DC',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
+  },
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   statusDotIndicator: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: theme.colors.primary,
   },
   gridSalonName: {
@@ -971,14 +1088,14 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F5EDE4',
     paddingTop: 8,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   gridWaitTime: {
     fontSize: 11,
     color: theme.colors.textMuted,
   },
   gridWaitBold: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '900',
     color: theme.colors.text,
   },
@@ -987,15 +1104,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: theme.colors.textMuted,
   },
-  gridQueueCount: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: theme.colors.primary,
-    marginBottom: 10,
-  },
   gridOneTapBtn: {
     backgroundColor: theme.colors.primary,
-    paddingVertical: 9,
+    paddingVertical: 8,
     paddingHorizontal: 8,
     borderRadius: 12,
     alignItems: 'center',
@@ -1008,51 +1119,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     textAlign: 'center',
   },
-  floatingActiveBar: {
-    position: 'absolute',
-    bottom: 12,
-    left: theme.spacing.md,
-    right: theme.spacing.md,
-    backgroundColor: theme.colors.text,
-    borderRadius: 18,
-    padding: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  activeBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  activeBarPulse: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: theme.colors.primary,
-  },
-  activeBarTitle: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  activeBarSub: {
-    color: '#D1C4B8',
-    fontSize: 11,
-    marginTop: 1,
-  },
-  cancelQueueBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: theme.radii.full,
-  },
-  cancelQueueText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
@@ -1062,32 +1128,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    padding: theme.spacing.xl,
+    padding: 20,
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    marginBottom: 16,
   },
   initialAvatarLarge: {
-    width: 48,
-    height: 48,
+    width: 56,
+    height: 56,
     borderRadius: 16,
     backgroundColor: '#F5EDE4',
     justifyContent: 'center',
     alignItems: 'center',
   },
   initialTextLarge: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '900',
     color: theme.colors.primary,
   },
   closeBtn: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
     color: theme.colors.textMuted,
-    padding: 4,
+    padding: 8,
   },
   modalTitle: {
     fontSize: 20,
@@ -1100,42 +1166,73 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalCategory: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: theme.colors.primary,
-    marginTop: 2,
-    marginBottom: theme.spacing.lg,
+    marginTop: 4,
+    marginBottom: 16,
   },
   modalStatsBox: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     backgroundColor: '#FAF7F2',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: theme.spacing.xl,
+    padding: 14,
+    marginBottom: 20,
   },
   modalStat: {
-    flex: 1,
+    alignItems: 'center',
   },
   modalStatLabel: {
     fontSize: 10,
-    fontWeight: '700',
     color: theme.colors.textMuted,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   modalStatVal: {
-    fontSize: 17,
-    fontWeight: '900',
-    color: theme.colors.text,
-    marginTop: 2,
-  },
-  joinQueueBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radii.full,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  joinQueueText: {
-    color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '900',
+    color: theme.colors.text,
+    marginTop: 4,
+  },
+  joinQueueBtnModal: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  joinQueueTextModal: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  gpsButton: {
+    backgroundColor: theme.colors.primary,
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  gpsButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  localityHeader: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: theme.colors.textMuted,
+    marginBottom: 8,
+    letterSpacing: 0.5,
+  },
+  localityRow: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F5EDE4',
+  },
+  localityText: {
+    fontSize: 14,
+    color: theme.colors.text,
+    fontWeight: '600',
   },
 });

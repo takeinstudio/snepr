@@ -13,7 +13,7 @@ export default function TabLayout() {
           backgroundColor: '#FFFFFF',
           borderTopColor: theme.colors.border,
           borderTopWidth: 1,
-          height: 62,
+          height: 64,
           paddingBottom: 8,
           paddingTop: 6,
         },
@@ -27,6 +27,21 @@ export default function TabLayout() {
             <View style={[styles.iconPill, focused && styles.iconPillActive]}>
               <SymbolView
                 name={{ ios: 'house.fill', android: 'home', web: 'home' }}
+                tintColor={focused ? theme.colors.primary : color}
+                size={22}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconPill, focused && styles.iconPillActive]}>
+              <SymbolView
+                name={{ ios: 'magnifyingglass', android: 'search', web: 'search' }}
                 tintColor={focused ? theme.colors.primary : color}
                 size={22}
               />

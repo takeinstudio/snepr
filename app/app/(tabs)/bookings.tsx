@@ -1,11 +1,14 @@
 import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../../src/api/client';
 import { theme } from '../../src/theme';
 import { Card } from '../../src/components/Card';
+import { SymbolView } from 'expo-symbols';
 
 export default function BookingsScreen() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   // Live Active Queue from DB
@@ -49,7 +52,8 @@ export default function BookingsScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>My Queues & Activity</Text>
+        <Text style={styles.headerTitle}>My Queue & Activity</Text>
+        <Text style={styles.headerSubtitle}>Real-time token tracking & past visits</Text>
       </View>
 
       <View style={styles.content}>
@@ -118,19 +122,34 @@ export default function BookingsScreen() {
           </View>
         ) : (
           <Card style={styles.emptyCard}>
-            <Text style={styles.emptyIcon}>⏳</Text>
+            <View style={styles.emptyIconCircle}>
+              <SymbolView
+                name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
+                tintColor={theme.colors.primary}
+                size={28}
+              />
+            </View>
             <Text style={styles.emptyTitle}>No Active Queue</Text>
-            <Text style={styles.emptyText}>Join a queue from the Home screen to track your live status in real time.</Text>
+            <Text style={styles.emptyText}>
+              Join a salon queue from Home or Explore to track your live status in real time.
+            </Text>
+            <TouchableOpacity
+              style={styles.findChairBtn}
+              onPress={() => router.push('/')}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.findChairBtnText}>Find Fastest Chair</Text>
+            </TouchableOpacity>
           </Card>
         )}
 
-        {/* Past Visit History from Database */}
+        {/* Past Visit History */}
         <Text style={styles.sectionHeading}>PAST VISITS & RECENT ACTIVITY</Text>
         {loadingHistory ? (
           <ActivityIndicator size="small" color={theme.colors.primary} />
         ) : historyList.length === 0 ? (
-          <Card style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No past visit history found in database.</Text>
+          <Card style={styles.emptyCardSmall}>
+            <Text style={styles.emptyTextSmall}>No past visit history recorded yet.</Text>
           </Card>
         ) : (
           historyList.map((item: any) => (
@@ -141,7 +160,7 @@ export default function BookingsScreen() {
               </View>
               <Text style={styles.historyService}>{item.service}</Text>
               <View style={styles.historyFooter}>
-                <Text style={styles.historyDate}>🗓️ {item.date}</Text>
+                <Text style={styles.historyDate}>{item.date}</Text>
                 <View style={styles.completedBadge}>
                   <Text style={styles.completedText}>✓ {item.status}</Text>
                 </View>
@@ -165,14 +184,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingTop: theme.spacing.xl,
     paddingBottom: theme.spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: '#FAF7F2',
   },
   headerTitle: {
     fontSize: 22,
     fontWeight: '900',
     color: theme.colors.text,
+  },
+  headerSubtitle: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    marginTop: 2,
   },
   content: {
     padding: theme.spacing.lg,
@@ -330,12 +352,17 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     alignItems: 'center',
-    padding: theme.spacing.xl,
+    padding: 24,
     marginBottom: theme.spacing.xl,
   },
-  emptyIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  emptyIconCircle: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#F5EDE4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   emptyTitle: {
     fontSize: 16,
@@ -344,9 +371,31 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   emptyText: {
-    fontSize: 13,
+    fontSize: 12,
     color: theme.colors.textMuted,
     textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  findChairBtn: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+  findChairBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  emptyCardSmall: {
+    alignItems: 'center',
+    padding: 16,
+    marginBottom: 16,
+  },
+  emptyTextSmall: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
   },
   sectionHeading: {
     fontSize: 11,
@@ -391,7 +440,7 @@ const styles = StyleSheet.create({
   historyDate: {
     fontSize: 11,
     color: theme.colors.textMuted,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   completedBadge: {
     backgroundColor: '#F5EDE4',
