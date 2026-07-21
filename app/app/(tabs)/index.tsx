@@ -27,7 +27,7 @@ const COLUMN_WIDTH = (width - theme.spacing.lg * 2 - theme.spacing.md) / 2;
 
 const PRODUCTION_API_URL = 'https://snepr.in';
 const DEV_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || PRODUCTION_API_URL;
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (Platform.OS === 'web' ? 'http://localhost:3001' : DEV_API_URL);
 
 const FALLBACK_SALONS = [
   {
@@ -231,11 +231,22 @@ export default function HomeScreen() {
   const { data: activeQueueResponse } = useQuery<{ activeQueue: ActiveQueueData | null }>({
     queryKey: ['active-queue'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/user/active-queue`);
-      if (!res.ok) return { activeQueue: null };
-      return res.json();
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`${API_BASE_URL}/api/user/active-queue`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          return res.json();
+        }
+      } catch (e) {
+        // Silently handle offline/unreachable server
+      }
+      return { activeQueue: null };
     },
-    refetchInterval: 5000,
+    refetchInterval: 10000,
   });
 
   const activeQueue = activeQueueResponse?.activeQueue;
