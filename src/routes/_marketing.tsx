@@ -7,14 +7,11 @@ export const Route = createFileRoute("/_marketing")({
 });
 
 function MarketingLayout() {
-  const location = useLocation();
-  const isHypePage = location.pathname === "/";
-
   return (
     <>
-      {!isHypePage && <Navbar />}
+      <Navbar />
       <Outlet />
-      {!isHypePage && <Footer />}
+      <Footer />
     </>
   );
 }
