@@ -12,6 +12,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -19,9 +24,10 @@ jobs:
           java-version: '17'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci || npm install
 
-
+      - name: Create Dummy WebDir for Capacitor
+        run: mkdir -p .output/public && echo "Remote App" > .output/public/index.html
 
       - name: Sync Capacitor
         run: npx cap sync android
