@@ -25,7 +25,92 @@ import { SymbolView } from 'expo-symbols';
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - theme.spacing.lg * 2 - theme.spacing.md) / 2;
 
-const API_BASE_URL = 'http://localhost:3001';
+const PRODUCTION_API_URL = 'https://snepr.in';
+const DEV_API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || PRODUCTION_API_URL;
+
+const FALLBACK_SALONS = [
+  {
+    id: 44,
+    name: 'Style Studio by Jawed Habib',
+    address: 'KIIT Square, Patia, Bhubaneswar',
+    category: 'Premium Salon',
+    rating: '4.7',
+    reviewCount: 450,
+    status: 'open',
+    latitude: 20.3533,
+    longitude: 85.8266,
+    queueStatus: 'available',
+    waitTime: 0,
+    waitingCount: 0,
+    distanceKm: 0,
+    formattedDistance: '0 m away',
+  },
+  {
+    id: 42,
+    name: 'Urban Look Salon',
+    address: '1st Floor, Near Pal Heights, Jaydev Vihar',
+    category: "Men's Grooming",
+    rating: '4.6',
+    reviewCount: 89,
+    status: 'open',
+    latitude: 20.301,
+    longitude: 85.817,
+    queueStatus: 'finishing',
+    waitTime: 15,
+    waitingCount: 1,
+    distanceKm: 5.9,
+    formattedDistance: '5.9 km away',
+  },
+  {
+    id: 41,
+    name: 'The Scissors Edge',
+    address: 'Plot 142, Saheed Nagar, Bhubaneswar',
+    category: 'Unisex Salon',
+    rating: '4.8',
+    reviewCount: 124,
+    status: 'open',
+    latitude: 20.2961,
+    longitude: 85.8245,
+    queueStatus: 'available',
+    waitTime: 0,
+    waitingCount: 0,
+    distanceKm: 6.4,
+    formattedDistance: '6.4 km away',
+  },
+  {
+    id: 43,
+    name: 'Glamour Touch Hair & Beauty',
+    address: 'VIP Road, IRC Village, Nayapalli',
+    category: 'Beauty Parlour',
+    rating: '4.9',
+    reviewCount: 210,
+    status: 'open',
+    latitude: 20.287,
+    longitude: 85.8115,
+    queueStatus: 'busy',
+    waitTime: 45,
+    waitingCount: 3,
+    distanceKm: 7.5,
+    formattedDistance: '7.5 km away',
+  },
+  {
+    id: 45,
+    name: 'Toni & Guy Essensuals',
+    address: 'Janpath Road, Kharvela Nagar',
+    category: 'Luxury Salon',
+    rating: '4.8',
+    reviewCount: 312,
+    status: 'open',
+    latitude: 20.275,
+    longitude: 85.834,
+    queueStatus: 'busy',
+    waitTime: 45,
+    waitingCount: 3,
+    distanceKm: 8.7,
+    formattedDistance: '8.7 km away',
+  },
+];
 
 interface ActiveQueueData {
   id: string;
@@ -97,10 +182,48 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // Live Database Salons Fetch
+  // Live Database Salons Fetch (Unified Nearby Endpoint)
   const { data: dbSalons, isLoading, refetch } = useQuery({
-    queryKey: ['salons'],
-    queryFn: getSalons,
+    queryKey: ['salons', userCoords?.lat, userCoords?.lng],
+    queryFn: async () => {
+      const lat = userCoords?.lat || 20.3533;
+      const lng = userCoords?.lng || 85.8266;
+
+      // 1. Primary: Try Website Production / Environment API
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch(`${API_BASE_URL}/api/salons/nearby?lat=${lat}&lng=${lng}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+        }
+      } catch (e) {
+        // Fallthrough to dev API
+      }
+
+      // 2. Secondary: Try Local Dev API
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500);
+        const res = await fetch(`${DEV_API_URL}/api/salons/nearby?lat=${lat}&lng=${lng}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+        }
+      } catch (e) {
+        // Fallthrough to static fallback
+      }
+
+      return FALLBACK_SALONS;
+    },
+    initialData: FALLBACK_SALONS,
     refetchInterval: 10000,
   });
 

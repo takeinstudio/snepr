@@ -6,8 +6,8 @@ import {
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
-import { useLocation } from "../../hooks/useLocation";
 import { ContextualAppCTA } from "@/components/promo/ContextualAppCTA";
+import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -39,7 +39,7 @@ interface Salon {
 }
 
 function LiveDashboard() {
-  const { location } = useLocation();
+  const { location, loading: locating, requestGpsLocation, setManualLocation } = useLocation();
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("all");
@@ -47,30 +47,19 @@ function LiveDashboard() {
   const [search, setSearch] = useState("");
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
   const [activeQueue, setActiveQueue] = useState<any | null>(null);
+  const [showLocationModal, setShowLocationModal] = useState(false);
 
   const loadSalons = async () => {
     try {
-      const data = await getSalons({ data: {} });
-      if (data && Array.isArray(data)) {
-        const processed = data.map((s: any) => {
-          let dist: number | undefined;
-          if (location && s.latitude && s.longitude) {
-            dist = calculateDistance(
-              location.latitude,
-              location.longitude,
-              parseFloat(s.latitude),
-              parseFloat(s.longitude)
-            );
-          }
-          return {
-            ...s,
-            queueStatus: s.queueStatus || "available",
-            waitTime: s.waitTime || 0,
-            waitingCount: s.waitingCount || Math.floor((s.waitTime || 0) / 15),
-            distanceKm: dist,
-          };
-        });
-        setSalons(processed);
+      const res = await fetch(`http://localhost:3001/api/salons/nearby?lat=${location.latitude}&lng=${location.longitude}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSalons(data);
+      } else {
+        const fallback = await getSalons({ data: {} });
+        if (fallback && Array.isArray(fallback)) {
+          setSalons(fallback);
+        }
       }
     } catch (err) {
       console.error("Failed to load salons", err);
@@ -83,7 +72,7 @@ function LiveDashboard() {
     loadSalons();
     const interval = setInterval(loadSalons, 10000);
     return () => clearInterval(interval);
-  }, [location]);
+  }, [location.latitude, location.longitude]);
 
   const categories = [
     { id: 'all', name: 'All', icon: '✨' },
@@ -131,16 +120,6 @@ function LiveDashboard() {
   });
 
   const shortestSalons = [...salons].sort((a, b) => a.waitTime - b.waitTime).slice(0, 4);
-
-  const [selectedLocality, setSelectedLocality] = useState("Patia, Bhubaneswar");
-  const [showLocationModal, setShowLocationModal] = useState(false);
-  const localities = [
-    "Patia, Bhubaneswar",
-    "Saheed Nagar, Bhubaneswar",
-    "Jaydev Vihar, Bhubaneswar",
-    "Janpath, Bhubaneswar",
-    "KIIT Square, Bhubaneswar"
-  ];
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#1C1613] font-sans pb-24">
@@ -448,42 +427,14 @@ function LiveDashboard() {
         </div>
       )}
 
-      {/* ─── Location Selection Modal ─── */}
-      {showLocationModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl relative">
-            <button
-              onClick={() => setShowLocationModal(false)}
-              className="absolute top-4 right-4 p-2 text-[#9C948D] hover:text-[#1C1613]"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-lg font-extrabold text-[#1C1613] mb-4">Select Location</h3>
-
-            <div className="space-y-2 mb-4">
-              {localities.map((item) => (
-                <button
-                  key={item}
-                  onClick={() => {
-                    setSelectedLocality(item);
-                    setShowLocationModal(false);
-                  }}
-                  className={cn(
-                    "w-full text-left p-3 rounded-xl border text-xs font-extrabold transition-all flex items-center justify-between",
-                    selectedLocality === item
-                      ? "bg-[#7A4B29] text-white border-[#7A4B29]"
-                      : "bg-[#FAF7F2] text-[#1C1613] border-[#E8E2D9] hover:bg-[#FAF2EA]"
-                  )}
-                >
-                  <span>📍 {item}</span>
-                  {selectedLocality === item && <span>✓</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <LocationSelectorModal
+        isOpen={showLocationModal}
+        onClose={() => setShowLocationModal(false)}
+        currentLocation={location}
+        onUseGps={requestGpsLocation}
+        onSelectManual={setManualLocation}
+        isLocating={locating}
+      />
     </div>
   );
 }

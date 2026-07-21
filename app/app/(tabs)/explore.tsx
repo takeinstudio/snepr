@@ -15,7 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { theme } from '../../src/theme';
 import { SymbolView } from 'expo-symbols';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:3001' : 'http://localhost:3001';
 
 interface Salon {
   id: string;
@@ -51,9 +51,20 @@ export default function ExploreScreen() {
   const { data: salons = [], isLoading, refetch } = useQuery<Salon[]>({
     queryKey: ['salons-explore'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/api/salons`);
-      if (!res.ok) throw new Error('Failed to fetch salons');
-      return res.json();
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+        const res = await fetch(`${API_BASE_URL}/api/salons`, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) return data;
+        }
+      } catch (e) {
+        // Safe fallback
+      }
+      return [];
     },
   });
 

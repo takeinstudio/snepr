@@ -40,12 +40,39 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-// ─── SALONS LIST (DB LIVE DATA) ───
-app.get("/api/salons", async (req, res) => {
+// ─── Haversine Distance Helper ───
+function calculateHaversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function formatDistanceLabel(km: number): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m away`;
+  }
+  return `${km.toFixed(1)} km away`;
+}
+
+// ─── SALONS LIST & NEARBY SEARCH (DB LIVE DATA) ───
+app.get(["/api/salons", "/api/salons/nearby"], async (req, res) => {
   try {
+    const userLat = req.query.lat ? parseFloat(req.query.lat as string) : null;
+    const userLng = req.query.lng ? parseFloat(req.query.lng as string) : null;
+    const radius = req.query.radius ? parseFloat(req.query.radius as string) : 50; // default 50km
+    const sort = (req.query.sort as string) || "distance";
+
     const allSalons = await db.select().from(salons);
     
-    const salonsWithStatus = await Promise.all(allSalons.map(async (salon) => {
+    let salonsWithStatus = await Promise.all(allSalons.map(async (salon) => {
       const waiting = await db.select().from(queues).where(
         and(eq(queues.salonId, salon.id), eq(queues.status, "waiting"))
       );
@@ -57,15 +84,47 @@ app.get("/api/salons", async (req, res) => {
       if (waitingCount >= 3) queueStatus = "busy";
       else if (waitingCount > 0) queueStatus = "finishing";
 
+      const salonLat = salon.latitude ? parseFloat(salon.latitude.toString()) : null;
+      const salonLng = salon.longitude ? parseFloat(salon.longitude.toString()) : null;
+
+      let distanceKm: number | null = null;
+      let formattedDistance = "Nearby";
+
+      if (userLat !== null && userLng !== null && salonLat !== null && salonLng !== null) {
+        distanceKm = calculateHaversineKm(userLat, userLng, salonLat, salonLng);
+        formattedDistance = formatDistanceLabel(distanceKm);
+      }
+
       return {
         ...salon,
         queueStatus,
         waitTime,
         waitingCount,
-        latitude: salon.latitude ? parseFloat(salon.latitude.toString()) : null,
-        longitude: salon.longitude ? parseFloat(salon.longitude.toString()) : null,
+        latitude: salonLat,
+        longitude: salonLng,
+        distanceKm,
+        formattedDistance,
       };
     }));
+
+    // Filter by radius if user location provided
+    if (userLat !== null && userLng !== null) {
+      salonsWithStatus = salonsWithStatus.filter(
+        (s) => s.distanceKm === null || s.distanceKm <= radius
+      );
+    }
+
+    // Sort strategy
+    salonsWithStatus.sort((a, b) => {
+      if (sort === "wait") return a.waitTime - b.waitTime;
+      if (sort === "rating") return Number(b.rating || 0) - Number(a.rating || 0);
+      
+      // Default: distance
+      if (a.distanceKm !== null && b.distanceKm !== null) {
+        return a.distanceKm - b.distanceKm;
+      }
+      return a.waitTime - b.waitTime;
+    });
 
     res.json(salonsWithStatus);
   } catch (error: any) {

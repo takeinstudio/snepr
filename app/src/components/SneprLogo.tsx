@@ -1,17 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { theme } from '../theme';
 
 interface SneprLogoProps {
   fontSize?: number;
   color?: string;
 }
 
-export function SneprLogo({ fontSize = 28, color = theme.colors.text }: SneprLogoProps) {
+export function SneprLogo({ fontSize = 28, color = '#101012' }: SneprLogoProps) {
   return (
     <View style={styles.container}>
       <Text style={[styles.text, { fontSize, color }]}>
-        sn<Text style={{ color: theme.colors.primary }}>≡</Text>pr
+        sn≡pr
       </Text>
     </View>
   );
