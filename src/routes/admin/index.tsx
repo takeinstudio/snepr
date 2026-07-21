@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { login, createSubAdmin, getAllUsers, getCities, createCity, type SessionUser } from "../../backend/functions/auth";
+import { createFileRoute } from "@tanstack/react-router";
+import { login, createSubAdmin, createUser, deleteUser, updateUserRole, getAllUsers, getCities, createCity, type SessionUser, type UserRole } from "../../backend/functions/auth";
 import { getSalons, getPlatformStats, approveSalon, rejectSalon, suspendSalon } from "../../backend/functions/salons";
 import { getAllBookings, getFinancialStats, getCoupons, createCoupon, getNotifications, createNotification } from "../../backend/functions/admin";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -7,9 +7,9 @@ import { useState } from "react";
 import {
   LayoutDashboard, Users, Store, BookOpen, BarChart2,
   LogOut, Bell, ArrowRight, ShieldCheck, Megaphone, FileText,
-  DollarSign, Globe, AlertTriangle, CheckCircle, XCircle,
-  Plus, Search, ChevronRight, Zap, TrendingUp, Sparkles,
-  Percent, Send, RefreshCw, Filter, Shield, Calendar, ArrowUpRight
+  DollarSign, AlertTriangle, CheckCircle, XCircle,
+  Plus, Search, Zap, TrendingUp, Sparkles,
+  Percent, Send, Trash2, Edit2, Shield, UserPlus
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
@@ -18,24 +18,22 @@ export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
 });
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Minimal High-Value Sidebar ──────────────────────────────────────────────
 
 type Tab =
-  | "Overview" | "Live Monitor" | "Salon Management" | "User Management"
-  | "Booking Management" | "Financials" | "Marketing" | "CMS"
-  | "Analytics" | "Access Control";
+  | "Overview" | "Salon Management" | "User Management"
+  | "Booking Management" | "Financials" | "Marketing"
+  | "Access Control & Cities" | "Live Monitor";
 
-const SIDEBAR: { name: Tab; icon: any; badge?: number }[] = [
+const SIDEBAR: { name: Tab; icon: any }[] = [
   { name: "Overview", icon: LayoutDashboard },
-  { name: "Live Monitor", icon: Zap },
   { name: "Salon Management", icon: Store },
   { name: "User Management", icon: Users },
   { name: "Booking Management", icon: BookOpen },
   { name: "Financials", icon: DollarSign },
   { name: "Marketing", icon: Megaphone },
-  { name: "CMS", icon: FileText },
-  { name: "Analytics", icon: BarChart2 },
-  { name: "Access Control", icon: ShieldCheck },
+  { name: "Access Control & Cities", icon: ShieldCheck },
+  { name: "Live Monitor", icon: Zap },
 ];
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
@@ -99,7 +97,7 @@ function LoginScreen({ username, setUsername, password, setPassword, error, onSu
             <span className="text-[#A8744F]">Events & Salons</span> to Extraordinary.
           </h1>
           <p className="mt-4 text-[15px] text-white/70 font-light leading-relaxed">
-            Snepr Admin Console — real-time control over salons, users, queues, and earnings.
+            Snepr Admin Console — single point of control for salons, users, queues, and earnings.
           </p>
           <div className="mt-8 inline-flex items-center gap-3 px-5 py-2.5 rounded-full border border-[#7A4B29]/40 bg-[#7A4B29]/20 backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-[#7A4B29]" />
@@ -150,7 +148,7 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
   const [salonFilterParam, setSalonFilterParam] = useState<string>("all");
 
   const visibleLinks = session.role === "sub_admin"
-    ? SIDEBAR.filter(s => ["Overview", "Salon Management", "Booking Management", "Analytics", "Marketing"].includes(s.name))
+    ? SIDEBAR.filter(s => ["Overview", "Salon Management", "Booking Management", "Marketing"].includes(s.name))
     : SIDEBAR;
 
   const navigateToTab = (tab: Tab, filterVal?: string) => {
@@ -234,9 +232,7 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
           {activeTab === "Booking Management" && <BookingManagementTab session={session} />}
           {activeTab === "Financials" && <FinancialsTab session={session} />}
           {activeTab === "Marketing" && <MarketingTab session={session} />}
-          {activeTab === "CMS" && <CmsTab session={session} />}
-          {activeTab === "Analytics" && <AnalyticsTab session={session} />}
-          {activeTab === "Access Control" && <AccessControlTab session={session} />}
+          {activeTab === "Access Control & Cities" && <AccessControlTab session={session} />}
           {activeTab === "Live Monitor" && <LiveMonitorTab session={session} />}
         </div>
       </main>
@@ -380,8 +376,6 @@ function InteractiveStatCard({ icon: Icon, label, value, trend, accent, green, w
 function SalonManagementTab({ session, initialFilter = "all" }: { session: SessionUser; initialFilter?: string }) {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState(initialFilter);
-  const [rejectingId, setRejectingId] = useState<number | null>(null);
-  const [rejectReason, setRejectReason] = useState("");
 
   const { data: salons = [], isLoading } = useQuery({
     queryKey: ["salons-admin", session.role, session.cityId],
@@ -391,12 +385,6 @@ function SalonManagementTab({ session, initialFilter = "all" }: { session: Sessi
   const approveMutation = useMutation({
     mutationFn: (salonId: number) => approveSalon({ data: { callerRole: session.role, callerId: session.id, salonId } }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["salons-admin"] }),
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ salonId, reason }: { salonId: number; reason: string }) =>
-      rejectSalon({ data: { callerRole: session.role, salonId, reason } }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["salons-admin"] }); setRejectingId(null); },
   });
 
   const suspendMutation = useMutation({
@@ -471,24 +459,213 @@ function SalonManagementTab({ session, initialFilter = "all" }: { session: Sessi
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       {salon.approvalStatus === "pending" && (
-                        <>
-                          <button onClick={() => approveMutation.mutate(salon.id)}
-                            className="px-3 py-1.5 bg-emerald-600 text-white text-[12px] font-bold rounded-lg hover:bg-emerald-700 transition-colors">
-                            Approve
-                          </button>
-                          <button onClick={() => setRejectingId(salon.id)}
-                            className="px-3 py-1.5 bg-red-50 text-red-700 text-[12px] font-bold rounded-lg border border-red-200">
-                            Reject
-                          </button>
-                        </>
+                        <button onClick={() => approveMutation.mutate(salon.id)}
+                          className="px-3.5 py-1.5 bg-emerald-600 text-white text-[12px] font-bold rounded-lg hover:bg-emerald-700 transition-colors">
+                          Approve
+                        </button>
                       )}
                       {salon.approvalStatus === "approved" && (
                         <button onClick={() => suspendMutation.mutate(salon.id)}
-                          className="px-3 py-1.5 bg-gray-100 text-gray-700 text-[12px] font-bold rounded-lg hover:bg-gray-200">
+                          className="px-3.5 py-1.5 bg-gray-100 text-gray-700 text-[12px] font-bold rounded-lg hover:bg-gray-200">
                           Suspend
                         </button>
                       )}
                     </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── User Management Tab (Full CRUD) ──────────────────────────────────────────
+
+function UserManagementTab({ session }: { session: SessionUser }) {
+  const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [uname, setUname] = useState("");
+  const [name, setName] = useState("");
+  const [pw, setPw] = useState("");
+  const [role, setRole] = useState<UserRole>("sub_admin");
+  const [cityId, setCityId] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const { data: allUsers = [], isLoading } = useQuery({
+    queryKey: ["all-users"],
+    queryFn: () => getAllUsers({ data: { callerRole: session.role } }),
+    enabled: session.role === "super_admin",
+  });
+
+  const { data: citiesList = [] } = useQuery({
+    queryKey: ["cities"],
+    queryFn: () => getCities(),
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: () => createUser({
+      data: {
+        callerRole: session.role,
+        username: uname,
+        password: pw,
+        name,
+        role,
+        cityId: cityId ? parseInt(cityId) : undefined,
+      }
+    }),
+    onSuccess: () => {
+      setMsg("User created successfully!");
+      setShowCreateModal(false);
+      setUname(""); setName(""); setPw("");
+      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+    },
+    onError: (e: any) => setMsg(e.message),
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId: number) => deleteUser({ data: { callerRole: session.role, userId } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["all-users"] }),
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ userId, newRole }: { userId: number; newRole: UserRole }) =>
+      updateUserRole({ data: { callerRole: session.role, userId, newRole } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["all-users"] }),
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-display font-bold text-[#1C1613]">User Management</h2>
+          <p className="text-[13px] text-[#6E6761]">Create, edit roles, or remove accounts across the platform.</p>
+        </div>
+        {session.role === "super_admin" && (
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2.5 bg-[#7A4B29] text-white text-[13px] font-bold rounded-xl flex items-center gap-2 hover:bg-[#5C361C] transition-colors shadow-sm"
+          >
+            <UserPlus className="w-4 h-4" /> Create User
+          </button>
+        )}
+      </div>
+
+      {msg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200">{msg}</div>}
+
+      {/* Create User Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl border border-[#E8E2D9] p-8 w-full max-w-md shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-[#1C1613]">Create New User</h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-[#9C948D] hover:text-[#1C1613]">✕</button>
+            </div>
+
+            <div className="space-y-3">
+              <Field label="Full Name" value={name} onChange={setName} placeholder="Ravi Kumar" />
+              <Field label="Username" value={uname} onChange={setUname} placeholder="ravi@snepr" />
+              <Field label="Password" value={pw} onChange={setPw} placeholder="••••••••" type="password" />
+
+              <div>
+                <label className="block text-[11px] font-bold text-[#6E6761] uppercase tracking-wider mb-2">Role</label>
+                <select value={role} onChange={e => setRole(e.target.value as UserRole)}
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-[#E8E2D9] text-sm outline-none">
+                  <option value="super_admin">Super Admin</option>
+                  <option value="sub_admin">Sub Admin</option>
+                  <option value="salon_owner">Salon Owner</option>
+                  <option value="staff">Staff / Barber</option>
+                  <option value="customer">Customer</option>
+                </select>
+              </div>
+
+              {role === "sub_admin" && (
+                <div>
+                  <label className="block text-[11px] font-bold text-[#6E6761] uppercase tracking-wider mb-2">City Scope</label>
+                  <select value={cityId} onChange={e => setCityId(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-white border border-[#E8E2D9] text-sm outline-none">
+                    <option value="">All Cities</option>
+                    {citiesList.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}, {c.state}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => createUserMutation.mutate()}
+                disabled={createUserMutation.isPending}
+                className="flex-1 py-3 bg-[#7A4B29] text-white font-bold rounded-xl text-sm hover:bg-[#5C361C]"
+              >
+                {createUserMutation.isPending ? "Creating…" : "Create User"}
+              </button>
+              <button onClick={() => setShowCreateModal(false)} className="px-4 py-3 bg-[#FAF7F2] text-[#6E6761] font-bold rounded-xl text-sm border border-[#E8E2D9]">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Users Table */}
+      {isLoading ? (
+        <div className="h-36 flex items-center justify-center text-[#6E6761]">Loading users…</div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-[#E8E2D9] flex items-center justify-between">
+            <h3 className="font-bold text-[#1C1613]">All Active Accounts <span className="font-mono text-[#9C948D] ml-1">({allUsers.length})</span></h3>
+          </div>
+          <table className="w-full text-left text-[13px]">
+            <thead className="bg-[#FAF7F2] border-b border-[#E8E2D9]">
+              <tr>
+                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">User</th>
+                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Role</th>
+                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Status</th>
+                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Joined</th>
+                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px] text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E8E2D9]/60">
+              {allUsers.map(u => (
+                <tr key={u.id} className="hover:bg-[#FAF7F2] transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="font-bold text-[#1C1613]">{u.name ?? u.username}</div>
+                    <div className="text-[#9C948D] text-[12px] font-mono">{u.username}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <select
+                      value={u.role}
+                      onChange={e => updateRoleMutation.mutate({ userId: u.id, newRole: e.target.value as UserRole })}
+                      disabled={u.username === "snepr@2026"}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#7A4B29]/10 text-[#7A4B29] outline-none cursor-pointer disabled:opacity-60"
+                    >
+                      <option value="super_admin">Super Admin</option>
+                      <option value="sub_admin">Sub Admin</option>
+                      <option value="salon_owner">Salon Owner</option>
+                      <option value="staff">Staff</option>
+                      <option value="customer">Customer</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full border border-emerald-200">Active</span>
+                  </td>
+                  <td className="px-6 py-4 text-[#9C948D] font-mono text-[12px]">
+                    {new Date(u.createdAt).toLocaleDateString("en-IN")}
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    {u.username !== "snepr@2026" && (
+                      <button
+                        onClick={() => deleteUserMutation.mutate(u.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete user"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -574,7 +751,7 @@ function BookingManagementTab({ session }: { session: SessionUser }) {
 // ─── Financials Tab ───────────────────────────────────────────────────────────
 
 function FinancialsTab({ session }: { session: SessionUser }) {
-  const { data: finStats, isLoading } = useQuery({
+  const { data: finStats } = useQuery({
     queryKey: ["financial-stats"],
     queryFn: () => getFinancialStats({ data: { callerRole: session.role } }),
   });
@@ -619,9 +796,7 @@ function MarketingTab({ session }: { session: SessionUser }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [msg, setMsg] = useState("");
-
   const [code, setCode] = useState("");
-  const [discountVal, setDiscountVal] = useState("20");
 
   const { data: couponsList = [] } = useQuery({
     queryKey: ["coupons"],
@@ -634,13 +809,12 @@ function MarketingTab({ session }: { session: SessionUser }) {
   });
 
   const couponMutation = useMutation({
-    mutationFn: () => createCoupon({ data: { code, discountType: "percent", value: parseInt(discountVal) } }),
+    mutationFn: () => createCoupon({ data: { code, discountType: "percent", value: 20 } }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["coupons"] }); setCode(""); },
   });
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Push Campaign */}
       <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6 space-y-4">
         <h3 className="text-[16px] font-bold text-[#1C1613] flex items-center gap-2">
           <Send className="w-4 h-4 text-[#7A4B29]" /> Push Notification Campaign
@@ -655,7 +829,6 @@ function MarketingTab({ session }: { session: SessionUser }) {
         </button>
       </div>
 
-      {/* Coupons */}
       <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6 space-y-4">
         <h3 className="text-[16px] font-bold text-[#1C1613] flex items-center gap-2">
           <Percent className="w-4 h-4 text-[#7A4B29]" /> Coupon Codes
@@ -681,136 +854,12 @@ function MarketingTab({ session }: { session: SessionUser }) {
   );
 }
 
-// ─── CMS Tab ──────────────────────────────────────────────────────────────────
-
-function CmsTab({ session }: { session: SessionUser }) {
-  const { data: citiesList = [] } = useQuery({
-    queryKey: ["cities-cms"],
-    queryFn: () => getCities(),
-  });
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-display font-bold text-[#1C1613]">Content & City Management</h2>
-        <p className="text-[13px] text-[#6E6761]">Active operating cities and content configurations.</p>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
-        <h3 className="text-[15px] font-bold text-[#1C1613] mb-4">Active Cities ({citiesList.length})</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          {citiesList.map((c: any) => (
-            <div key={c.id} className="p-4 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]">
-              <div className="font-bold text-[#1C1613]">{c.name}</div>
-              <div className="text-xs text-[#6E6761]">{c.state}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Analytics Tab ────────────────────────────────────────────────────────────
-
-function AnalyticsTab({ session }: { session: SessionUser }) {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-display font-bold text-[#1C1613]">Platform Analytics</h2>
-        <p className="text-[13px] text-[#6E6761]">Performance overview and queue volume trends.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
-          <h3 className="text-[15px] font-bold text-[#1C1613] mb-4">Peak Booking Hours</h3>
-          <div className="h-40 flex items-end gap-2 pt-6">
-            {[40, 65, 80, 95, 60, 45, 90, 100, 70, 50].map((h, i) => (
-              <div key={i} className="flex-1 bg-[#7A4B29] rounded-t-lg" style={{ height: `${h}%` }} />
-            ))}
-          </div>
-          <div className="flex justify-between text-[10px] text-[#9C948D] mt-2 font-mono">
-            <span>9 AM</span><span>12 PM</span><span>4 PM</span><span>8 PM</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
-          <h3 className="text-[15px] font-bold text-[#1C1613] mb-4">User Growth</h3>
-          <div className="h-40 flex items-end gap-3 pt-6">
-            {[30, 45, 60, 75, 90, 100].map((g, i) => (
-              <div key={i} className="flex-1 bg-[#A8744F] rounded-t-lg" style={{ height: `${g}%` }} />
-            ))}
-          </div>
-          <div className="flex justify-between text-[10px] text-[#9C948D] mt-2 font-mono">
-            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── User Management Tab ──────────────────────────────────────────────────────
-
-function UserManagementTab({ session }: { session: SessionUser }) {
-  const { data: allUsers = [], isLoading } = useQuery({
-    queryKey: ["all-users"],
-    queryFn: () => getAllUsers({ data: { callerRole: session.role } }),
-    enabled: session.role === "super_admin",
-  });
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-display font-bold text-[#1C1613]">User Management</h2>
-      {isLoading ? (
-        <div className="h-36 flex items-center justify-center text-[#6E6761]">Loading users…</div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm overflow-hidden">
-          <table className="w-full text-left text-[13px]">
-            <thead className="bg-[#FAF7F2] border-b border-[#E8E2D9]">
-              <tr>
-                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">User</th>
-                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Role</th>
-                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Status</th>
-                <th className="px-6 py-4 font-bold text-[#6E6761] uppercase tracking-wider text-[11px]">Joined</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E8E2D9]/60">
-              {allUsers.map(u => (
-                <tr key={u.id} className="hover:bg-[#FAF7F2] transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-[#1C1613]">{u.name ?? u.username}</div>
-                    <div className="text-[#9C948D] text-[12px]">{u.username}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#7A4B29]/10 text-[#7A4B29] capitalize">
-                      {u.role.replace("_", " ")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-[11px] font-bold rounded-full">Active</span>
-                  </td>
-                  <td className="px-6 py-4 text-[#9C948D] font-mono text-[12px]">
-                    {new Date(u.createdAt).toLocaleDateString("en-IN")}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Access Control Tab ────────────────────────────────────────────────────────
+// ─── Access Control & Cities Tab ──────────────────────────────────────────────
 
 function AccessControlTab({ session }: { session: SessionUser }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [uname, setUname] = useState("");
-  const [pw, setPw] = useState("");
-  const [cityId, setCityId] = useState("");
+  const [cityName, setCityName] = useState("");
+  const [stateName, setStateName] = useState("");
   const [msg, setMsg] = useState("");
 
   const { data: cities = [] } = useQuery({
@@ -818,45 +867,46 @@ function AccessControlTab({ session }: { session: SessionUser }) {
     queryFn: () => getCities(),
   });
 
-  const createMutation = useMutation({
-    mutationFn: () => createSubAdmin({
-      data: { callerRole: session.role, username: uname, password: pw, name, cityId: parseInt(cityId) }
-    }),
+  const cityMutation = useMutation({
+    mutationFn: () => createCity({ data: { callerRole: session.role, name: cityName, state: stateName } }),
     onSuccess: () => {
-      setMsg("Sub admin created successfully.");
-      setName(""); setUname(""); setPw(""); setCityId("");
-      queryClient.invalidateQueries({ queryKey: ["all-users"] });
+      setMsg("City added!");
+      setCityName(""); setStateName("");
+      queryClient.invalidateQueries({ queryKey: ["cities"] });
     },
-    onError: (e: any) => setMsg(e.message),
   });
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm p-8">
-        <h2 className="text-[18px] font-display font-bold text-[#1C1613] mb-1">Create Sub Admin</h2>
-        <p className="text-[13px] text-[#6E6761] mb-6">Assign city managers with city-level administrative access.</p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-display font-bold text-[#1C1613]">Access Control & Cities</h2>
+          <p className="text-[13px] text-[#6E6761]">Manage platform operating cities and sub-admin scopes.</p>
+        </div>
+      </div>
 
-        {msg && <div className="mb-5 p-3 rounded-xl bg-emerald-50 text-emerald-700 text-[13px] font-bold">{msg}</div>}
+      {msg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-xl">{msg}</div>}
 
-        <div className="space-y-4">
-          <Field label="Full Name" value={name} onChange={setName} placeholder="Ravi Kumar" />
-          <Field label="Username" value={uname} onChange={setUname} placeholder="ravi@bbsr" />
-          <Field label="Password" value={pw} onChange={setPw} placeholder="••••••••" type="password" />
-          <div>
-            <label className="block text-[11px] font-bold text-[#6E6761] uppercase tracking-wider mb-2">City Scope</label>
-            <select value={cityId} onChange={e => setCityId(e.target.value)}
-              className="w-full px-4 py-3.5 rounded-xl bg-white border border-[#E8E2D9] text-[14px] outline-none">
-              <option value="">Select a city…</option>
-              {cities.map(c => (
-                <option key={c.id} value={c.id}>{c.name}, {c.state}</option>
-              ))}
-            </select>
-          </div>
-          <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending}
-            className="w-full h-12 bg-[#7A4B29] hover:bg-[#5C361C] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
-            <Plus className="w-4 h-4" />
-            {createMutation.isPending ? "Creating…" : "Create Sub Admin"}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6 space-y-4">
+          <h3 className="text-[16px] font-bold text-[#1C1613]">Add Operating City</h3>
+          <Field label="City Name" value={cityName} onChange={setCityName} placeholder="Cuttack" />
+          <Field label="State" value={stateName} onChange={setStateName} placeholder="Odisha" />
+          <button onClick={() => cityMutation.mutate()} className="w-full py-3 bg-[#7A4B29] text-white font-bold rounded-xl text-sm">
+            Add City
           </button>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E8E2D9] p-6">
+          <h3 className="text-[16px] font-bold text-[#1C1613] mb-4">Active Operating Cities ({cities.length})</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {cities.map(c => (
+              <div key={c.id} className="p-3 rounded-xl bg-[#FAF7F2] border border-[#E8E2D9]">
+                <div className="font-bold text-[#1C1613]">{c.name}</div>
+                <div className="text-xs text-[#9C948D]">{c.state}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -900,7 +950,7 @@ function Field({ label, value, onChange, placeholder, type = "text" }: any) {
     <div>
       <label className="block text-[11px] font-bold text-[#6E6761] uppercase tracking-wider mb-2">{label}</label>
       <input type={type} placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full px-4 py-3.5 rounded-xl bg-white border border-[#E8E2D9] focus:ring-2 focus:ring-[#7A4B29]/30 focus:border-[#7A4B29] transition-all text-[14px] outline-none text-[#1C1613]" />
+        className="w-full px-4 py-3 rounded-xl bg-white border border-[#E8E2D9] focus:ring-2 focus:ring-[#7A4B29]/30 focus:border-[#7A4B29] transition-all text-[14px] outline-none text-[#1C1613]" />
     </div>
   );
 }

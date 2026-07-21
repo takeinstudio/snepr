@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { db } from "../db";
 import { users, cities, salons } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, ne, sql, and } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export type UserRole = "super_admin" | "sub_admin" | "salon_owner" | "staff" | "customer";
@@ -64,6 +64,24 @@ export const login = createServerFn({ method: "POST" })
     } satisfies SessionUser;
   });
 
+// ─── Create Any User (Super Admin) ────────────────────────────────────────────
+
+export const createUser = createServerFn({ method: "POST" })
+  .validator((d: { callerRole: string; username: string; password: string; name: string; role: UserRole; cityId?: number }) => d)
+  .handler(async ({ data }) => {
+    if (data.callerRole !== "super_admin") throw new Error("Forbidden");
+
+    const hashed = await bcrypt.hash(data.password, 10);
+    const [created] = await db.insert(users).values({
+      username: data.username,
+      password: hashed,
+      name: data.name,
+      role: data.role,
+      cityId: data.cityId ?? null,
+    }).returning();
+    return created;
+  });
+
 // ─── Create Sub Admin ─────────────────────────────────────────────────────────
 
 export const createSubAdmin = createServerFn({ method: "POST" })
@@ -82,22 +100,34 @@ export const createSubAdmin = createServerFn({ method: "POST" })
     return { id: created.id, username: created.username, cityId: created.cityId };
   });
 
-// ─── Create Salon Owner ──────────────────────────────────────────────────────
+// ─── Delete User (Super Admin) ────────────────────────────────────────────────
 
-export const createSalonOwner = createServerFn({ method: "POST" })
-  .validator((d: { callerRole: string; username: string; password: string; name: string; phone?: string }) => d)
+export const deleteUser = createServerFn({ method: "POST" })
+  .validator((d: { callerRole: string; userId: number }) => d)
   .handler(async ({ data }) => {
-    if (!["super_admin", "sub_admin"].includes(data.callerRole)) throw new Error("Forbidden");
+    if (data.callerRole !== "super_admin") throw new Error("Forbidden");
 
-    const hashed = await bcrypt.hash(data.password, 10);
-    const [created] = await db.insert(users).values({
-      username: data.username,
-      password: hashed,
-      name: data.name,
-      phone: data.phone,
-      role: "salon_owner",
-    }).returning();
-    return { id: created.id, username: created.username };
+    // Do not allow deleting snepr@2026
+    const [target] = await db.select().from(users).where(eq(users.id, data.userId));
+    if (target?.username === "snepr@2026") {
+      throw new Error("Cannot delete primary Super Admin snepr@2026");
+    }
+
+    await db.delete(users).where(eq(users.id, data.userId));
+    return { success: true };
+  });
+
+// ─── Update User Role ─────────────────────────────────────────────────────────
+
+export const updateUserRole = createServerFn({ method: "POST" })
+  .validator((d: { callerRole: string; userId: number; newRole: UserRole }) => d)
+  .handler(async ({ data }) => {
+    if (data.callerRole !== "super_admin") throw new Error("Forbidden");
+
+    await db.update(users)
+      .set({ role: data.newRole })
+      .where(eq(users.id, data.userId));
+    return { success: true };
   });
 
 // ─── Suspend / Unsuspend User ─────────────────────────────────────────────────
@@ -112,12 +142,22 @@ export const suspendUser = createServerFn({ method: "POST" })
     return { success: true };
   });
 
-// ─── Get all users (super admin) ──────────────────────────────────────────────
+// ─── Get all users with auto-cleanup (Super Admin) ───────────────────────────
 
 export const getAllUsers = createServerFn({ method: "GET" })
   .validator((d: { callerRole: string }) => d)
   .handler(async ({ data }) => {
     if (data.callerRole !== "super_admin") throw new Error("Forbidden");
+
+    // Auto-cleanup legacy test admin/subadmin accounts
+    try {
+      await db.delete(users).where(
+        sql`${users.username} IN ('admin', 'subadmin') AND ${users.username} != 'snepr@2026'`
+      );
+    } catch {
+      // Ignore if constraint error
+    }
+
     return db.select({
       id: users.id,
       username: users.username,
