@@ -100,7 +100,8 @@ function HeroQueueCard() {
       try {
         const data = await getSalons({ data: {} });
         if (data && Array.isArray(data)) {
-          setSalons(data.slice(0, 3));
+          const sorted = [...data].sort((a: any, b: any) => (a.waitTime || 0) - (b.waitTime || 0));
+          setSalons(sorted.slice(0, 3));
         }
       } catch (e) {
         console.error("Error loading hero salons", e);
@@ -109,7 +110,7 @@ function HeroQueueCard() {
     load();
   }, []);
 
-  const topSalon = salons[0] || { name: "The Scissors Edge", waitTime: 5 };
+  const topSalon = salons[0] || { name: "Urban Look Salon", waitTime: 15 };
 
   return (
     <div className="rise-in relative mx-auto w-full max-w-md">
