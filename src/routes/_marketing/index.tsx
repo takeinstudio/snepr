@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { joinWaitlist } from "../../../server/functions/waitlist";
+import { joinWaitlist } from "../../backend/functions/waitlist";
 
 export const Route = createFileRoute("/_marketing/")({
   component: HypePage,

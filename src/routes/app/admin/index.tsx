@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getSalons, createSalon, updateSalon, deleteSalon } from "../../../../server/functions/salons";
-import { login } from "../../../../server/functions/auth";
+import { getSalons, createSalon, updateSalon, deleteSalon } from "../../../backend/functions/salons";
+import { login } from "../../../backend/functions/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 

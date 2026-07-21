@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { getSalonDetails } from "../../../server/functions/salons";
-import { joinQueue } from "../../../server/functions/queues";
+import { getSalonDetails } from "../../backend/functions/salons";
+import { joinQueue } from "../../backend/functions/queues";
 import { useQuery, useMutation } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/app/salon/$id")({

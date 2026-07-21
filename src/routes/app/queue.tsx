@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getQueueStatus } from "../../../server/functions/queues";
+import { getQueueStatus } from "../../backend/functions/queues";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 export const Route = createFileRoute("/app/queue")({
   component: AppQueue,

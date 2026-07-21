@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { getSalons } from "../../../server/functions/salons";
+import { getSalons } from "../../backend/functions/salons";
 import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/app/")({
