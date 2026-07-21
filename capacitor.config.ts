@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Snepr',
   webDir: '.output/public',
   server: {
-    url: 'https://snepr.vercel.app/app',
+    url: 'https://snepr.in/app',
     cleartext: true
   },
   plugins: {
