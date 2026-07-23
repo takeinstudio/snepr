@@ -101,7 +101,7 @@ export const createNotification = createServerFn({ method: "POST" })
       title: data.title,
       body: data.body,
       targetRole: data.targetRole ?? "all",
-      cityId: data.cityId ?? null,
+      targetCityId: data.cityId ?? null,
     }).returning();
 
     return notif;

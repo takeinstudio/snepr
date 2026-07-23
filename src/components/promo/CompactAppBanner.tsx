@@ -42,7 +42,7 @@ export function CompactAppBanner({ deepLinkPath = "" }: CompactAppBannerProps) {
     <div className="bg-[#1C1613] text-white px-3 py-2.5 flex items-center justify-between border-b border-[#332924] shadow-xs">
       <div className="flex items-center gap-2.5 min-w-0 flex-1" onClick={handleOpenApp}>
         <div className="w-8 h-8 rounded-xl bg-[#7A4B29] flex items-center justify-center shrink-0 border border-white/10 shadow-xs">
-          <SneprLogoMark size={20} color="#FAF8F5" />
+          <SneprLogoMark height={20} color="#FAF8F5" />
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[12px] font-extrabold truncate text-[#FAF8F5] leading-tight">
