@@ -18,7 +18,9 @@ async function runTest() {
   try {
     console.log("Test 1: Sending from login user (b2fb80001@smtp-brevo.com)...");
     const info1 = await transporter.sendMail({
-      from: '"Snepr Support" <b2fb80001@smtp-brevo.com>',
+      from: { name: 'Snepr Support', address: 'b2fb80001@smtp-brevo.com' },
+      replyTo: { name: 'Snepr Support', address: 'b2fb80001@smtp-brevo.com' },
+      sender: { name: 'Snepr Support', address: 'b2fb80001@smtp-brevo.com' },
       to: 'aayojana15@gmail.com',
       subject: 'Test 1: Brevo Verified Sender Test',
       html: '<h2>Test 1 Passed!</h2><p>This email was sent using Brevo verified sender login.</p>'
@@ -32,7 +34,9 @@ async function runTest() {
   try {
     console.log("\nTest 2: Sending from custom domain (support@snepr.in)...");
     const info2 = await transporter.sendMail({
-      from: '"Snepr Support" <support@snepr.in>',
+      from: { name: 'Snepr Support', address: 'support@snepr.in' },
+      replyTo: { name: 'Snepr Support', address: 'support@snepr.in' },
+      sender: { name: 'Snepr Support', address: 'support@snepr.in' },
       to: 'aayojana15@gmail.com',
       subject: 'Test 2: Custom Domain Sender Test',
       html: '<h2>Test 2 Passed!</h2><p>This email was sent using custom domain support@snepr.in.</p>'

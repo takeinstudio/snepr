@@ -23,30 +23,34 @@ export interface SendEmailPayload {
 }
 
 function parseFromIdentity(input: string): { name: string; email: string } {
-  if (!input) return { name: "Snepr Support", email: "support@snepr.in" };
+  const defaultName = process.env.SMTP_FROM_NAME || "Snepr Support";
+  const defaultEmail = process.env.SMTP_FROM_EMAIL || "support@snepr.in";
+
+  if (!input) return { name: defaultName, email: defaultEmail };
 
   const angleMatch = input.match(/^(.*?)\s*<([^>]+)>$/);
   if (angleMatch) {
-    return { name: angleMatch[1].replace(/["']/g, "").trim() || "Snepr Support", email: angleMatch[2].trim() };
+    const parsedName = angleMatch[1].replace(/["']/g, "").trim();
+    return { name: parsedName || defaultName, email: angleMatch[2].trim() };
   }
 
   const parenMatch = input.match(/^(.*?)\s*\(([^)]+)\)$/);
   if (parenMatch) {
-    return { name: parenMatch[1].replace(/["']/g, "").trim() || "Snepr Support", email: parenMatch[2].trim() };
+    const parsedName = parenMatch[1].replace(/["']/g, "").trim();
+    return { name: parsedName || defaultName, email: parenMatch[2].trim() };
   }
 
   if (input.includes("@")) {
-    return { name: "Snepr Support", email: input.trim() };
+    return { name: defaultName, email: input.trim() };
   }
 
-  return { name: "Snepr Support", email: "support@snepr.in" };
+  return { name: defaultName, email: defaultEmail };
 }
 
 export async function sendEmailDirectly(payload: SendEmailPayload) {
   const { fromIdentity, recipientType, toEmail, subject, body } = payload;
   
   const { name, email: senderEmail } = parseFromIdentity(fromIdentity);
-  const formattedFrom = `"${name}" <${senderEmail}>`;
 
   // Determine recipients list
   let recipients: string[] = [];
@@ -67,8 +71,9 @@ export async function sendEmailDirectly(payload: SendEmailPayload) {
     try {
       if (process.env.SMTP_PASS) {
         await transporter.sendMail({
-          from: formattedFrom,
-          replyTo: `"${name}" <${senderEmail}>`,
+          from: { name, address: senderEmail },
+          replyTo: { name, address: senderEmail },
+          sender: { name, address: senderEmail },
           to: targetEmail,
           subject: subject,
           html: body,
