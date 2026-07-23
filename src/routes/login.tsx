@@ -60,7 +60,7 @@ function LoginPage() {
   // Send OTP Mutation
   const sendOtpMutation = useMutation({
     mutationFn: () => sendOtp({ data: { email } }),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       setOtpSent(true);
       setOtpMessage(res.message);
       setRegError("");
@@ -83,7 +83,7 @@ function LoginPage() {
           otpCode,
         },
       }),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       setRegSuccess(res.message);
       setRegError("");
       setTimeout(() => {

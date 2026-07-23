@@ -81,7 +81,7 @@ export const registerSalonWithOtp = createServerFn({ method: "POST" })
     return {
       success: true,
       user: { id: user.id, username: user.username, role: user.role, salonId: salon.id },
-      salon,
+      salon: { id: salon.id, name: salon.name, address: salon.address },
       message: "Salon registration submitted successfully! Awaiting Admin approval.",
     };
   });
