@@ -18,7 +18,7 @@ function AppHome() {
     queryFn: () => getSalons({ data: {} }),
   });
 
-  const { location, fetchLocation } = useLocation();
+  const { location, requestGpsLocation } = useLocation();
 
   const sortedSalons = useMemo(() => {
     if (!salons) return [];

@@ -8,6 +8,8 @@ import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
 import { ContextualAppCTA } from "@/components/promo/ContextualAppCTA";
 import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
+import { useLocation } from "@/hooks/useLocation";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -36,10 +38,17 @@ interface Salon {
   latitude: string | null;
   longitude: string | null;
   distanceKm?: number;
+  formattedDistance?: string;
+}
+
+function formatDistance(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m away`;
+  return `${km.toFixed(1)} km away`;
 }
 
 function LiveDashboard() {
   const { location, loading: locating, requestGpsLocation, setManualLocation } = useLocation();
+  const selectedLocality = location.formattedLabel || "Patia, Bhubaneswar";
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<FilterOption>("all");

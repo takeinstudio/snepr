@@ -150,7 +150,6 @@ app.post("/api/queue/join", async (req, res) => {
     const [newQueue] = await db.insert(queues).values({
       salonId,
       tokenNumber: Math.floor(10 + Math.random() * 90),
-      position,
       status: "waiting",
       estimatedWaitMins: estimatedWait,
     }).returning();
@@ -194,7 +193,7 @@ app.get("/api/user/active-queue", async (req, res) => {
         tokenNumber: q.tokenNumber || 12,
         salonName: salon ? salon.name : "Salon",
         address: salon ? salon.address : "",
-        position: q.position || 1,
+        position: 1,
         waitTime: q.estimatedWaitMins || 5,
         status: q.status,
       }

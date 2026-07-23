@@ -31,7 +31,6 @@ import { Route as LiveCheckoutRouteImport } from './routes/live/checkout'
 import { Route as LiveProfileRouteImport } from './routes/live/profile'
 import { Route as LiveQueueRouteImport } from './routes/live/queue'
 import { Route as SalonIndexRouteImport } from './routes/salon/index'
-import { Route as ApiAdminEmailRouteImport } from './routes/api/admin/email'
 import { Route as AppSalonIdRouteImport } from './routes/app/salon.$id'
 import { Route as LiveSalonIdRouteImport } from './routes/live/salon.$id'
 
@@ -144,11 +143,6 @@ const SalonIndexRoute = SalonIndexRouteImport.update({
   path: '/salon/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiAdminEmailRoute = ApiAdminEmailRouteImport.update({
-  id: '/api/admin/email',
-  path: '/api/admin/email',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppSalonIdRoute = AppSalonIdRouteImport.update({
   id: '/salon/$id',
   path: '/salon/$id',
@@ -182,7 +176,6 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/live/': typeof LiveIndexRoute
   '/salon/': typeof SalonIndexRoute
-  '/api/admin/email': typeof ApiAdminEmailRoute
   '/app/salon/$id': typeof AppSalonIdRoute
   '/live/salon/$id': typeof LiveSalonIdRoute
 }
@@ -206,7 +199,6 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/live': typeof LiveIndexRoute
   '/salon': typeof SalonIndexRoute
-  '/api/admin/email': typeof ApiAdminEmailRoute
   '/app/salon/$id': typeof AppSalonIdRoute
   '/live/salon/$id': typeof LiveSalonIdRoute
 }
@@ -234,7 +226,6 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/live/': typeof LiveIndexRoute
   '/salon/': typeof SalonIndexRoute
-  '/api/admin/email': typeof ApiAdminEmailRoute
   '/app/salon/$id': typeof AppSalonIdRoute
   '/live/salon/$id': typeof LiveSalonIdRoute
 }
@@ -262,7 +253,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/live/'
     | '/salon/'
-    | '/api/admin/email'
     | '/app/salon/$id'
     | '/live/salon/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -286,7 +276,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/live'
     | '/salon'
-    | '/api/admin/email'
     | '/app/salon/$id'
     | '/live/salon/$id'
   id:
@@ -313,7 +302,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/live/'
     | '/salon/'
-    | '/api/admin/email'
     | '/app/salon/$id'
     | '/live/salon/$id'
   fileRoutesById: FileRoutesById
@@ -324,7 +312,6 @@ export interface RootRouteChildren {
   LiveRoute: typeof LiveRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
   SalonIndexRoute: typeof SalonIndexRoute
-  ApiAdminEmailRoute: typeof ApiAdminEmailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -483,13 +470,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SalonIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/admin/email': {
-      id: '/api/admin/email'
-      path: '/api/admin/email'
-      fullPath: '/api/admin/email'
-      preLoaderRoute: typeof ApiAdminEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/salon/$id': {
       id: '/app/salon/$id'
       path: '/salon/$id'
@@ -577,7 +557,6 @@ const rootRouteChildren: RootRouteChildren = {
   LiveRoute: LiveRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
   SalonIndexRoute: SalonIndexRoute,
-  ApiAdminEmailRoute: ApiAdminEmailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
