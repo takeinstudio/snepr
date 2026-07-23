@@ -22,11 +22,31 @@ export interface SendEmailPayload {
   body: string;
 }
 
+function parseFromIdentity(input: string): { name: string; email: string } {
+  if (!input) return { name: "Snepr Support", email: "support@snepr.in" };
+
+  const angleMatch = input.match(/^(.*?)\s*<([^>]+)>$/);
+  if (angleMatch) {
+    return { name: angleMatch[1].replace(/["']/g, "").trim() || "Snepr Support", email: angleMatch[2].trim() };
+  }
+
+  const parenMatch = input.match(/^(.*?)\s*\(([^)]+)\)$/);
+  if (parenMatch) {
+    return { name: parenMatch[1].replace(/["']/g, "").trim() || "Snepr Support", email: parenMatch[2].trim() };
+  }
+
+  if (input.includes("@")) {
+    return { name: "Snepr Support", email: input.trim() };
+  }
+
+  return { name: "Snepr Support", email: "support@snepr.in" };
+}
+
 export async function sendEmailDirectly(payload: SendEmailPayload) {
   const { fromIdentity, recipientType, toEmail, subject, body } = payload;
   
-  // Format From Identity e.g. "Snepr Support <support@snepr.in>" or "Snepr No-Reply <noreply@snepr.in>"
-  const formattedFrom = fromIdentity.includes("<") ? fromIdentity : `"Snepr Support" <${fromIdentity || "support@snepr.in"}>`;
+  const { name, email: senderEmail } = parseFromIdentity(fromIdentity);
+  const formattedFrom = `"${name}" <${senderEmail}>`;
 
   // Determine recipients list
   let recipients: string[] = [];
@@ -48,6 +68,7 @@ export async function sendEmailDirectly(payload: SendEmailPayload) {
       if (process.env.SMTP_PASS) {
         await transporter.sendMail({
           from: formattedFrom,
+          replyTo: `"${name}" <${senderEmail}>`,
           to: targetEmail,
           subject: subject,
           html: body,

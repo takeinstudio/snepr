@@ -91,7 +91,7 @@ export function EmailCenter() {
   const [activeTab, setActiveTab] = useState<"compose" | "history">("compose");
 
   // Form State
-  const [fromIdentity, setFromIdentity] = useState("Snepr Support (support@snepr.in)");
+  const [fromIdentity, setFromIdentity] = useState("Snepr Support <support@snepr.in>");
   const [customFrom, setCustomFrom] = useState("");
   const [recipientType, setRecipientType] = useState<"single" | "customers" | "salons" | "broadcast">("single");
   const [toEmail, setToEmail] = useState("");
@@ -240,9 +240,9 @@ export function EmailCenter() {
                 onChange={(e) => setFromIdentity(e.target.value)}
                 className="w-full px-4 py-2.5 rounded-xl border border-[#E8E2D9] bg-[#FAF8F5] text-xs font-semibold text-[#1C1613] outline-none focus:border-[#7A4B29]"
               >
-                <option value="Snepr Support (support@snepr.in)">Snepr Support (support@snepr.in)</option>
-                <option value="Snepr No-Reply (noreply@snepr.in)">Snepr No-Reply (noreply@snepr.in)</option>
-                <option value="Snepr Platform (hello@snepr.in)">Snepr Platform (hello@snepr.in)</option>
+                <option value="Snepr Support <support@snepr.in>">Snepr Support (support@snepr.in)</option>
+                <option value="Snepr No-Reply <noreply@snepr.in>">Snepr No-Reply (noreply@snepr.in)</option>
+                <option value="Snepr Platform <hello@snepr.in>">Snepr Platform (hello@snepr.in)</option>
                 <option value="Custom Identity">Custom Identity Address</option>
               </select>
 
