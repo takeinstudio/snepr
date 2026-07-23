@@ -72,6 +72,10 @@ export async function sendEmailDirectly(payload: SendEmailPayload) {
           to: targetEmail,
           subject: subject,
           html: body,
+          envelope: {
+            from: process.env.SMTP_USER || "b2fb80001@smtp-brevo.com",
+            to: targetEmail,
+          },
         });
       } else {
         console.log(`[SMTP SIMULATOR] Email to ${targetEmail} | Subject: ${subject}`);
