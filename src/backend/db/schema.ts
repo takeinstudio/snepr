@@ -323,3 +323,13 @@ export const calendarExceptions = pgTable("calendar_exceptions", {
   endTime: text("end_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─── Email OTP Verification ───────────────────────────────────────────────────
+export const emailOtps = pgTable("email_otps", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

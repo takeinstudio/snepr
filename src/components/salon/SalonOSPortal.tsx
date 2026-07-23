@@ -49,12 +49,83 @@ export const SALON_OS_NAV: { name: SalonOSTab; icon: any; category: string; isEx
   { name: "Multi-Branch", icon: GitBranch, category: "Growth" },
   { name: "Marketing Tools", icon: Share2, category: "Growth" },
   { name: "Reports", icon: FileText, category: "Operations" },
-  { name: "Notifications", icon: Bell, category: "Core" },
-  { name: "Settings", icon: Settings, category: "Setup" },
 ];
 
 export function SalonOSPortal({ session, onLogout }: { session: any; onLogout: () => void }) {
   const [activeTab, setActiveTab] = useState<SalonOSTab>("Dashboard");
+
+  // Check approval status (pending | rejected | approved)
+  const approvalStatus = session?.approvalStatus || "approved";
+
+  if (approvalStatus === "pending") {
+    return (
+      <div className="min-h-screen bg-[#141210] text-[#F3EFEA] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <div className="max-w-md w-full bg-[#1A1714] border border-[#7A4B29]/40 p-8 rounded-2xl space-y-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#7A4B29]/20 border border-[#7A4B29]/50 flex items-center justify-center text-[#D4A373] mx-auto text-3xl">
+            ⏳
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">Salon Verification Pending</h2>
+            <p className="text-xs text-[#A69F96] leading-relaxed">
+              Your salon registration/claim request has been received! Our Snepr Admin team is reviewing your business details and verification proof.
+            </p>
+          </div>
+
+          <div className="p-4 bg-[#141210] border border-[#2D2824] rounded-xl text-left text-xs space-y-1.5">
+            <p className="text-[#D4A373] font-bold">Status: Pending Verification</p>
+            <p className="text-[#8E867E]">Once approved, your full SalonOS dashboard features will be unlocked automatically.</p>
+          </div>
+
+          <button
+            onClick={onLogout}
+            className="w-full py-3 bg-[#25211D] border border-[#3D352E] hover:bg-[#322A25] text-white font-bold text-xs rounded-xl transition-all"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (approvalStatus === "rejected") {
+    return (
+      <div className="min-h-screen bg-[#141210] text-[#F3EFEA] flex flex-col items-center justify-center p-6 text-center font-sans">
+        <div className="max-w-md w-full bg-[#1A1714] border border-red-500/40 p-8 rounded-2xl space-y-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mx-auto text-3xl">
+            🚫
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2">Verification Rejected</h2>
+            <p className="text-xs text-[#A69F96] leading-relaxed">
+              Your salon registration or claim request was reviewed and could not be verified by Snepr Admin.
+            </p>
+          </div>
+
+          {session?.rejectionReason && (
+            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-left text-xs text-red-400 space-y-1">
+              <p className="font-bold uppercase tracking-wider text-[10px]">Rejection Reason:</p>
+              <p>{session.rejectionReason}</p>
+            </div>
+          )}
+
+          <div className="pt-2 flex items-center gap-3">
+            <button
+              onClick={onLogout}
+              className="flex-1 py-3 bg-[#25211D] border border-[#3D352E] hover:bg-[#322A25] text-white font-bold text-xs rounded-xl transition-all"
+            >
+              Sign Out
+            </button>
+            <a
+              href="mailto:support@snepr.in"
+              className="flex-1 py-3 bg-[#7A4B29] hover:bg-[#8F5A33] text-white font-bold text-xs rounded-xl transition-all flex items-center justify-center"
+            >
+              Contact Support
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
   const [isQueuePaused, setIsQueuePaused] = useState(false);
   const [walkinModal, setWalkinModal] = useState(false);
   const [walkinName, setWalkinName] = useState("");

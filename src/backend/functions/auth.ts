@@ -54,6 +54,17 @@ export const login = createServerFn({ method: "POST" })
 
     if (user.suspendedAt) throw new Error("This account has been suspended.");
 
+    let approvalStatus = "approved";
+    let rejectionReason: string | null = null;
+
+    if (user.salonId) {
+      const [salon] = await db.select().from(salons).where(eq(salons.id, user.salonId));
+      if (salon) {
+        approvalStatus = salon.approvalStatus || "approved";
+        rejectionReason = salon.rejectionReason || null;
+      }
+    }
+
     return {
       id: user.id,
       username: user.username,
@@ -61,7 +72,9 @@ export const login = createServerFn({ method: "POST" })
       role: user.role as UserRole,
       cityId: user.cityId ?? null,
       salonId: user.salonId ?? null,
-    } satisfies SessionUser;
+      approvalStatus,
+      rejectionReason,
+    };
   });
 
 // ─── Create Any User (Super Admin) ────────────────────────────────────────────

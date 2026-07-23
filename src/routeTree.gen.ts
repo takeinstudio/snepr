@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as MarketingAboutRouteImport } from './routes/_marketing/about'
 import { Route as MarketingClaimRouteImport } from './routes/_marketing/claim'
@@ -19,7 +20,6 @@ import { Route as MarketingContactRouteImport } from './routes/_marketing/contac
 import { Route as MarketingFaqRouteImport } from './routes/_marketing/faq'
 import { Route as MarketingPrivacyPolicyRouteImport } from './routes/_marketing/privacy-policy'
 import { Route as MarketingTermsOfServiceRouteImport } from './routes/_marketing/terms-of-service'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppActivityRouteImport } from './routes/app/activity'
 import { Route as AppCheckoutRouteImport } from './routes/app/checkout'
@@ -46,6 +46,11 @@ const AppRoute = AppRouteImport.update({
 const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingIndexRoute = MarketingIndexRouteImport.update({
@@ -82,11 +87,6 @@ const MarketingTermsOfServiceRoute = MarketingTermsOfServiceRouteImport.update({
   id: '/terms-of-service',
   path: '/terms-of-service',
   getParentRoute: () => MarketingRoute,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
@@ -158,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/app': typeof AppRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/login': typeof LoginRoute
   '/about': typeof MarketingAboutRoute
   '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
@@ -172,7 +173,6 @@ export interface FileRoutesByFullPath {
   '/live/checkout': typeof LiveCheckoutRoute
   '/live/profile': typeof LiveProfileRoute
   '/live/queue': typeof LiveQueueRoute
-  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/live/': typeof LiveIndexRoute
   '/salon/': typeof SalonIndexRoute
@@ -180,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/live/salon/$id': typeof LiveSalonIdRoute
 }
 export interface FileRoutesByTo {
+  '/login': typeof LoginRoute
   '/about': typeof MarketingAboutRoute
   '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
@@ -195,7 +196,6 @@ export interface FileRoutesByTo {
   '/live/profile': typeof LiveProfileRoute
   '/live/queue': typeof LiveQueueRoute
   '/': typeof MarketingIndexRoute
-  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
   '/live': typeof LiveIndexRoute
   '/salon': typeof SalonIndexRoute
@@ -207,6 +207,7 @@ export interface FileRoutesById {
   '/_marketing': typeof MarketingRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/live': typeof LiveRouteWithChildren
+  '/login': typeof LoginRoute
   '/_marketing/about': typeof MarketingAboutRoute
   '/_marketing/claim': typeof MarketingClaimRoute
   '/_marketing/contact': typeof MarketingContactRoute
@@ -222,7 +223,6 @@ export interface FileRoutesById {
   '/live/profile': typeof LiveProfileRoute
   '/live/queue': typeof LiveQueueRoute
   '/_marketing/': typeof MarketingIndexRoute
-  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
   '/live/': typeof LiveIndexRoute
   '/salon/': typeof SalonIndexRoute
@@ -235,6 +235,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/live'
+    | '/login'
     | '/about'
     | '/claim'
     | '/contact'
@@ -249,7 +250,6 @@ export interface FileRouteTypes {
     | '/live/checkout'
     | '/live/profile'
     | '/live/queue'
-    | '/admin/'
     | '/app/'
     | '/live/'
     | '/salon/'
@@ -257,6 +257,7 @@ export interface FileRouteTypes {
     | '/live/salon/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/login'
     | '/about'
     | '/claim'
     | '/contact'
@@ -272,7 +273,6 @@ export interface FileRouteTypes {
     | '/live/profile'
     | '/live/queue'
     | '/'
-    | '/admin'
     | '/app'
     | '/live'
     | '/salon'
@@ -283,6 +283,7 @@ export interface FileRouteTypes {
     | '/_marketing'
     | '/app'
     | '/live'
+    | '/login'
     | '/_marketing/about'
     | '/_marketing/claim'
     | '/_marketing/contact'
@@ -298,7 +299,6 @@ export interface FileRouteTypes {
     | '/live/profile'
     | '/live/queue'
     | '/_marketing/'
-    | '/admin/'
     | '/app/'
     | '/live/'
     | '/salon/'
@@ -310,7 +310,7 @@ export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   LiveRoute: typeof LiveRouteWithChildren
-  AdminIndexRoute: typeof AdminIndexRoute
+  LoginRoute: typeof LoginRoute
   SalonIndexRoute: typeof SalonIndexRoute
 }
 
@@ -335,6 +335,13 @@ declare module '@tanstack/react-router' {
       path: '/live'
       fullPath: '/live'
       preLoaderRoute: typeof LiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_marketing/': {
@@ -385,13 +392,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms-of-service'
       preLoaderRoute: typeof MarketingTermsOfServiceRouteImport
       parentRoute: typeof MarketingRoute
-    }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/app/': {
       id: '/app/'
@@ -555,7 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   LiveRoute: LiveRouteWithChildren,
-  AdminIndexRoute: AdminIndexRoute,
+  LoginRoute: LoginRoute,
   SalonIndexRoute: SalonIndexRoute,
 }
 export const routeTree = rootRouteImport
