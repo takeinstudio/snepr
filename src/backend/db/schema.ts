@@ -199,3 +199,16 @@ export const waitlist = pgTable("waitlist", {
   email: text("email").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─── Email Logs (Admin Center) ────────────────────────────────────────────────
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  fromIdentity: text("from_identity").notNull(),
+  recipientType: text("recipient_type").notNull(),
+  toEmail: text("to_email").notNull(),
+  subject: text("subject").notNull(),
+  body: text("body").notNull(),
+  status: text("status").default("sent").notNull(), // sent | failed
+  errorMessage: text("error_message"),
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+});

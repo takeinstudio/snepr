@@ -106,3 +106,19 @@ export const createNotification = createServerFn({ method: "POST" })
 
     return notif;
   });
+
+// ─── Email Center Server Functions ───────────────────────────────────────────
+
+export const fetchAdminEmailStats = createServerFn({ method: "GET" })
+  .validator((d: { callerRole?: string }) => d)
+  .handler(async () => {
+    const { getEmailStats } = await import("../email");
+    return getEmailStats();
+  });
+
+export const dispatchAdminEmail = createServerFn({ method: "POST" })
+  .validator((d: { fromIdentity: string; recipientType: "single" | "customers" | "salons" | "broadcast"; toEmail: string; subject: string; body: string }) => d)
+  .handler(async ({ data }) => {
+    const { sendEmailDirectly } = await import("../email");
+    return sendEmailDirectly(data);
+  });
