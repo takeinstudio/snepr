@@ -52,7 +52,7 @@ function AppHome() {
     <div className="flex flex-col p-4 pb-20 bg-background min-h-screen">
       
       {/* Location Header - Zomato Style */}
-      <div className="flex items-center gap-3 mb-6" onClick={() => fetchLocation()}>
+      <div className="flex items-center gap-3 mb-6" onClick={() => requestGpsLocation()}>
         <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary shrink-0">
           <MapPin className="w-5 h-5" />
         </div>
