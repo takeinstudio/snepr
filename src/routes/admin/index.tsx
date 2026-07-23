@@ -9,10 +9,11 @@ import {
   LogOut, Bell, ArrowRight, ShieldCheck, Megaphone, FileText,
   DollarSign, AlertTriangle, CheckCircle, XCircle,
   Plus, Search, Zap, TrendingUp, Sparkles,
-  Percent, Send, Trash2, Edit2, Shield, UserPlus, Menu, X
+  Percent, Send, Trash2, Edit2, Shield, UserPlus, Menu, X, Mail
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
+import { EmailCenter } from "@/components/admin/EmailCenter";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/admin/")({
 type Tab =
   | "Overview" | "Salon Management" | "User Management"
   | "Booking Management" | "Financials" | "Marketing"
-  | "Access Control & Cities" | "Live Monitor";
+  | "Access Control & Cities" | "Live Monitor" | "Email Center";
 
 const SIDEBAR: { name: Tab; icon: any }[] = [
   { name: "Overview", icon: LayoutDashboard },
@@ -34,6 +35,7 @@ const SIDEBAR: { name: Tab; icon: any }[] = [
   { name: "Marketing", icon: Megaphone },
   { name: "Access Control & Cities", icon: ShieldCheck },
   { name: "Live Monitor", icon: Zap },
+  { name: "Email Center", icon: Mail },
 ];
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
@@ -264,6 +266,7 @@ function DashboardShell({ session, onLogout }: { session: SessionUser; onLogout:
           {activeTab === "Marketing" && <MarketingTab session={session} />}
           {activeTab === "Access Control & Cities" && <AccessControlTab session={session} />}
           {activeTab === "Live Monitor" && <LiveMonitorTab session={session} />}
+          {activeTab === "Email Center" && <EmailCenter />}
         </div>
       </main>
     </div>
