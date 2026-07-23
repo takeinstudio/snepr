@@ -204,22 +204,43 @@ app.get("/api/user/active-queue", async (req, res) => {
   }
 });
 
-// ─── GET USER HISTORY FROM DB ───
-app.get("/api/user/history", async (req, res) => {
+// ─── SALON OS API ROUTES (Web & Mobile Partner Portal) ───
+import { getSalonOSData, addWalkInCustomer, calculateDynamicWaitTime } from "./salon-os";
+
+app.get("/api/salon-os/dashboard", async (req, res) => {
   try {
-    const historyList = await db.select().from(queues).orderBy(desc(queues.createdAt)).limit(5);
-    const formatted = await Promise.all(historyList.map(async (q) => {
-      const [salon] = await db.select().from(salons).where(eq(salons.id, q.salonId));
-      return {
-        id: q.id,
-        salonName: salon ? salon.name : "Salon",
-        service: salon ? `${salon.category || 'Haircut'} Service` : "Salon Service",
-        date: new Date(q.createdAt).toLocaleDateString("en-IN", { day: 'numeric', month: 'short', year: 'numeric' }),
-        price: "₹350",
-        status: q.status === "waiting" ? "Active" : q.status === "cancelled" ? "Cancelled" : "Completed",
-      };
-    }));
-    res.json({ history: formatted });
+    const salonId = req.query.salonId ? parseInt(req.query.salonId as string) : 1;
+    const data = await getSalonOSData(salonId);
+    res.json(data);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/salon-os/walkin", async (req, res) => {
+  try {
+    const { salonId, customerName, phone, serviceId, staffId } = req.body;
+    const result = await addWalkInCustomer({
+      salonId: salonId || 1,
+      customerName: customerName || "Walk-In Customer",
+      phone,
+      serviceId: serviceId || 1,
+      staffId,
+    });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post("/api/salon-os/queue/action", async (req, res) => {
+  try {
+    const { queueId, action } = req.body;
+    if (!queueId || !action) {
+      return res.status(400).json({ error: "Missing queueId or action" });
+    }
+    await db.update(queues).set({ status: action }).where(eq(queues.id, queueId));
+    res.json({ success: true, action });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
   }

@@ -212,3 +212,114 @@ export const emailLogs = pgTable("email_logs", {
   errorMessage: text("error_message"),
   sentAt: timestamp("sent_at").defaultNow().notNull(),
 });
+
+// ─── Inventory Management ─────────────────────────────────────────────────────
+export const inventory = pgTable("inventory", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  name: text("name").notNull(),
+  category: text("category").notNull(), // Shampoos, Hair Colors, Creams, Consumables
+  stockCount: integer("stock_count").default(0).notNull(),
+  minThreshold: integer("min_threshold").default(5).notNull(),
+  unitPrice: integer("unit_price").notNull(), // paise
+  unit: text("unit").default("pcs").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Employee Payroll & Attendance ───────────────────────────────────────────
+export const attendance = pgTable("attendance", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  staffId: integer("staff_id").references(() => staff.id).notNull(),
+  date: text("date").notNull(), // YYYY-MM-DD
+  checkIn: text("check_in"),
+  checkOut: text("check_out"),
+  status: text("status").default("present").notNull(), // present | absent | half_day | leave
+});
+
+export const payroll = pgTable("payroll", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  staffId: integer("staff_id").references(() => staff.id).notNull(),
+  month: text("month").notNull(), // YYYY-MM
+  baseSalary: integer("base_salary").default(0).notNull(), // paise
+  commissionAmount: integer("commission_amount").default(0).notNull(), // paise
+  tips: integer("tips").default(0).notNull(), // paise
+  incentives: integer("incentives").default(0).notNull(), // paise
+  totalPaid: integer("total_paid").default(0).notNull(), // paise
+  status: text("status").default("pending").notNull(), // pending | processed | paid
+  paidAt: timestamp("paid_at"),
+});
+
+// ─── Subscriptions & Invoices ─────────────────────────────────────────────────
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  planTier: text("plan_tier").default("pro").notNull(), // basic | pro | enterprise
+  status: text("status").default("active").notNull(), // active | trial | cancelled | past_due
+  billingCycle: text("billing_cycle").default("monthly").notNull(),
+  price: integer("price").notNull(), // paise
+  nextBillingAt: timestamp("next_billing_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  invoiceNumber: text("invoice_number").notNull().unique(),
+  amount: integer("amount").notNull(), // paise
+  pdfUrl: text("pdf_url"),
+  status: text("status").default("paid").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Marketing & Promotions ───────────────────────────────────────────────────
+export const marketingCampaigns = pgTable("marketing_campaigns", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // sms | whatsapp | push | referral | loyalty
+  audience: text("audience").default("all").notNull(),
+  content: text("content").notNull(),
+  sentCount: integer("sent_count").default(0).notNull(),
+  conversionRate: text("conversion_rate").default("0%").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Multi-Branch Management ──────────────────────────────────────────────────
+export const branches = pgTable("branches", {
+  id: serial("id").primaryKey(),
+  parentSalonId: integer("parent_salon_id").references(() => salons.id).notNull(),
+  name: text("name").notNull(),
+  cityId: integer("city_id").references(() => cities.id),
+  address: text("address"),
+  phone: text("phone"),
+  revenue: integer("revenue").default(0).notNull(), // paise
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Salon Operating Settings ────────────────────────────────────────────────
+export const salonSettings = pgTable("salon_settings", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull().unique(),
+  autoAssignStaff: boolean("auto_assign_staff").default(true).notNull(),
+  defaultWaitTimeBuffer: integer("default_wait_time_buffer").default(5).notNull(), // minutes
+  maxQueueLength: integer("max_queue_length").default(30).notNull(),
+  cancellationFeePercent: integer("cancellation_fee_percent").default(0).notNull(),
+  allowWalkins: boolean("allow_walkins").default(true).notNull(),
+  notifyProximityMins: integer("notify_proximity_mins").default(10).notNull(),
+  isQueuePaused: boolean("is_queue_paused").default(false).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// ─── Calendar Exceptions & Blocked Dates ──────────────────────────────────────
+export const calendarExceptions = pgTable("calendar_exceptions", {
+  id: serial("id").primaryKey(),
+  salonId: integer("salon_id").references(() => salons.id).notNull(),
+  type: text("type").notNull(), // holiday | block_date | custom_hours
+  date: text("date").notNull(), // YYYY-MM-DD
+  description: text("description"),
+  startTime: text("start_time"),
+  endTime: text("end_time"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
