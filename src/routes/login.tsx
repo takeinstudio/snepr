@@ -46,9 +46,10 @@ function LoginPage() {
     mutationFn: () => login({ data: { username, password } }),
     onSuccess: (data) => {
       setLoginError("");
-      if (["super_admin", "sub_admin"].includes(data.role)) {
-        navigate({ to: "/salon" });
-      } else if (["salon_owner", "staff"].includes(data.role)) {
+      try {
+        localStorage.setItem("snepr_session", JSON.stringify(data));
+      } catch {}
+      if (["super_admin", "sub_admin", "salon_owner", "staff"].includes(data.role)) {
         navigate({ to: "/salon" });
       } else {
         navigate({ to: "/live" });
@@ -86,6 +87,11 @@ function LoginPage() {
     onSuccess: (res: any) => {
       setRegSuccess(res.message);
       setRegError("");
+      if (res.user) {
+        try {
+          localStorage.setItem("snepr_session", JSON.stringify(res.user));
+        } catch {}
+      }
       setTimeout(() => {
         navigate({ to: "/salon" });
       }, 1500);
