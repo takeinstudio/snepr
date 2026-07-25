@@ -218,3 +218,47 @@ export const getSalonStats = createServerFn({ method: "GET" })
       totalRevenue,
     };
   });
+
+// ─── SalonOS Live Server Functions ───────────────────────────────────────────
+import { getSalonOSData, addWalkInCustomer } from "../salon-os";
+
+export const fetchSalonOSPortalData = createServerFn({ method: "GET" })
+  .validator((d: { salonId: number }) => d)
+  .handler(async ({ data }) => {
+    return getSalonOSData(data.salonId);
+  });
+
+export const addWalkInToken = createServerFn({ method: "POST" })
+  .validator((d: { salonId: number; customerName: string; phone?: string; serviceId?: number; staffId?: number }) => d)
+  .handler(async ({ data }) => {
+    return addWalkInCustomer({
+      salonId: data.salonId,
+      customerName: data.customerName,
+      phone: data.phone,
+      serviceId: data.serviceId || 1,
+      staffId: data.staffId,
+    });
+  });
+
+export const updateQueueTokenAction = createServerFn({ method: "POST" })
+  .validator((d: { queueId?: number; action: string; salonId?: number }) => d)
+  .handler(async ({ data }) => {
+    if (data.action === "call_next" && data.salonId) {
+      const waitingList = await db
+        .select()
+        .from(queues)
+        .where(and(eq(queues.salonId, data.salonId), eq(queues.status, "waiting")))
+        .orderBy(queues.tokenNumber)
+        .limit(1);
+
+      if (waitingList.length > 0) {
+        await db.update(queues).set({ status: "in-progress" }).where(eq(queues.id, waitingList[0].id));
+      }
+      return { success: true };
+    }
+
+    if (data.queueId) {
+      await db.update(queues).set({ status: data.action }).where(eq(queues.id, data.queueId));
+    }
+    return { success: true };
+  });

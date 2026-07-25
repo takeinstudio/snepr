@@ -126,45 +126,73 @@ export function SalonOSPortal({ session, onLogout }: { session: any; onLogout: (
       </div>
     );
   }
+  const queryClient = useQueryClient();
+  const salonId = session?.salonId || 1;
+
+  // Live Database Query for SalonOS
+  const { data: portalData, isLoading } = useQuery({
+    queryKey: ["salon-os-portal", salonId],
+    queryFn: () => fetchSalonOSPortalData({ data: { salonId } }),
+    refetchInterval: 5000,
+  });
+
+  // Live Database Walk-In Mutation
+  const addWalkInMutation = useMutation({
+    mutationFn: () =>
+      addWalkInToken({
+        data: {
+          salonId,
+          customerName: walkinName,
+          phone: walkinPhone,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["salon-os-portal"] });
+      setWalkinName("");
+      setWalkinPhone("");
+      setWalkinModal(false);
+    },
+  });
+
+  // Live Database Queue Action Mutation
+  const queueActionMutation = useMutation({
+    mutationFn: (args: { queueId?: number; action: string }) =>
+      updateQueueTokenAction({
+        data: {
+          salonId,
+          queueId: args.queueId,
+          action: args.action,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["salon-os-portal"] });
+    },
+  });
+
   const [isQueuePaused, setIsQueuePaused] = useState(false);
   const [walkinModal, setWalkinModal] = useState(false);
   const [walkinName, setWalkinName] = useState("");
   const [walkinPhone, setWalkinPhone] = useState("");
   const [walkinService, setWalkinService] = useState("Haircut ₹250");
-  const [queueTokens, setQueueTokens] = useState([
-    { id: 1, token: 101, name: "Aarav Sharma", service: "Haircut + Beard", waitMins: 5, status: "in-progress", type: "Online" },
-    { id: 2, token: 102, name: "Vikram Malhotra", service: "Hair Spa", waitMins: 20, status: "waiting", type: "Walk-in" },
-    { id: 3, token: 103, name: "Rohan Gupta", service: "Haircut", waitMins: 35, status: "waiting", type: "Walk-in" },
-    { id: 4, token: 104, name: "Priya Patel", service: "Hair Styling", waitMins: 50, status: "waiting", type: "Online" },
-  ]);
+
+  const queueTokens = portalData?.queues || [];
+  const metrics = portalData?.metrics || {
+    todayRevenuePaise: 0,
+    customersWaiting: 0,
+    todayAppointments: 0,
+    avgRating: "4.8",
+    totalReviews: 0,
+    estimatedWaitMins: 0,
+    peakHours: "4 PM - 8 PM",
+  };
 
   const handleAddWalkin = () => {
     if (!walkinName) return;
-    const newToken = Math.max(...queueTokens.map((t) => t.token), 100) + 1;
-    setQueueTokens([
-      ...queueTokens,
-      {
-        id: Date.now(),
-        token: newToken,
-        name: walkinName,
-        service: walkinService,
-        waitMins: queueTokens.filter((q) => q.status === "waiting").length * 15 + 10,
-        status: "waiting",
-        type: "Walk-in",
-      },
-    ]);
-    setWalkinName("");
-    setWalkinPhone("");
-    setWalkinModal(false);
+    addWalkInMutation.mutate();
   };
 
   const handleCallNext = () => {
-    const waitingList = queueTokens.filter((q) => q.status === "waiting");
-    if (!waitingList.length) return;
-    const nextId = waitingList[0].id;
-    setQueueTokens(
-      queueTokens.map((q) => (q.id === nextId ? { ...q, status: "in-progress" } : q))
-    );
+    queueActionMutation.mutate({ action: "call_next" });
   };
 
   return (
