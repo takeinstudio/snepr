@@ -74,18 +74,6 @@ function LiveDashboard() {
 
   const loadSalons = async () => {
     try {
-      const res = await fetch(`/api/salons/nearby?lat=${location.latitude}&lng=${location.longitude}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSalons(data);
-        setLoading(false);
-        return;
-      }
-    } catch (err) {
-      console.warn("Failed to fetch via API, falling back...", err);
-    }
-
-    try {
       const fallback = await getSalons({ data: {} });
       if (fallback && Array.isArray(fallback)) {
         setSalons(fallback);
