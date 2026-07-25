@@ -89,7 +89,7 @@ export function openNativeApp(deepLinkPath: string = ''): void {
         window.location.href = PROMO_CONFIG.IOS_STORE_URL;
       } else {
         // Desktop / Fallback route
-        window.location.href = PROMO_CONFIG.ANDROID_STORE_URL;
+        window.location.href = '/live';
       }
     }
   }, 1500);
