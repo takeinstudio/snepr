@@ -573,7 +573,7 @@ function LiveDashboard() {
               </div>
 
               <a
-                href="/Snepr-v1.0.3.aab"
+                href="/Snepr-v1.0.4.aab"
                 download
                 className="w-full flex items-center justify-center gap-3 h-14 bg-white hover:bg-[#FAF7F2] text-[#1C1613] font-bold text-xs uppercase tracking-widest rounded-2xl border border-[#E5E0D8] transition-all shadow-xs"
               >

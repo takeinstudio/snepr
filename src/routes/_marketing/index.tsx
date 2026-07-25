@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_marketing/")({
 
 
 /* ------------------------------ Hero ------------------------------ */
-function Hero() {
+function Hero({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
   return (
     <section id="top" className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pt-14 md:pt-20">
       <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-14">
@@ -53,7 +53,11 @@ function Hero() {
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link to="/live" className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover">
+            <Link 
+              to="/live" 
+              onClick={onInteraction}
+              className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover"
+            >
               <MapPin className="h-5 w-5" />
               Find a salon near you
             </Link>
@@ -195,7 +199,7 @@ function HeroQueueCard() {
 }
 
 /* --------------------------- How it works --------------------------- */
-function HowItWorks() {
+function HowItWorks({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
   const steps = [
     {
       n: "01",
@@ -207,7 +211,7 @@ function HowItWorks() {
       n: "02",
       title: "Join the queue",
       copy: "Tap once. Your spot is locked in from anywhere.",
-      preview: <MiniJoin />,
+      preview: <MiniJoin onInteraction={onInteraction} />,
     },
     {
       n: "03",
@@ -283,7 +287,7 @@ function MiniSeeWait() {
   );
 }
 
-function MiniJoin() {
+function MiniJoin({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
   return (
     <div className="flex h-full flex-col justify-between gap-3">
       <div className="rounded-xl bg-card p-3">
@@ -296,6 +300,7 @@ function MiniJoin() {
       </div>
       <Link
         to="/live"
+        onClick={onInteraction}
         className="flex w-full items-center justify-center rounded-xl bg-primary py-2.5 text-[13px] font-bold text-primary-foreground press press-active"
       >
         Join queue
@@ -727,7 +732,7 @@ function SneprLanding() {
               </div>
 
               <a
-                href="/Snepr-v1.0.3.aab"
+                href="/Snepr-v1.0.4.aab"
                 download
                 className="w-full flex items-center justify-center gap-3 h-14 bg-white hover:bg-[#FAF7F2] text-[#1C1613] font-bold text-xs uppercase tracking-widest rounded-2xl border border-[#E5E0D8] transition-all shadow-xs"
               >
