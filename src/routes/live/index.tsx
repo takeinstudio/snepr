@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { getSalons } from "../../backend/functions/salons";
 import { useEffect, useState } from "react";
 import {
-  Search, MapPin, Zap, CheckCircle2, Clock, Navigation, X
+  Search, MapPin, Zap, CheckCircle2, Clock, Navigation, X, Smartphone
 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,9 @@ import { ContextualAppCTA } from "@/components/promo/ContextualAppCTA";
 import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
 import { useLocation } from "@/hooks/useLocation";
 import { toast } from "sonner";
+import { auth, googleProvider } from "@/config/firebase";
+import { signInWithPopup } from "firebase/auth";
+import { loginWithGoogleServer } from "@/backend/functions/auth";
 
 export const Route = createFileRoute("/live/")({
   head: () => ({
@@ -58,17 +61,34 @@ function LiveDashboard() {
   const [activeQueue, setActiveQueue] = useState<any | null>(null);
   const [showLocationModal, setShowLocationModal] = useState(false);
 
+  const [session, setSession] = useState<any>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authLoading, setAuthLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const data = localStorage.getItem("snepr_session");
+      if (data) setSession(JSON.parse(data));
+    } catch {}
+  }, []);
+
   const loadSalons = async () => {
     try {
-      const res = await fetch(`http://localhost:3001/api/salons/nearby?lat=${location.latitude}&lng=${location.longitude}`);
+      const res = await fetch(`/api/salons/nearby?lat=${location.latitude}&lng=${location.longitude}`);
       if (res.ok) {
         const data = await res.json();
         setSalons(data);
-      } else {
-        const fallback = await getSalons({ data: {} });
-        if (fallback && Array.isArray(fallback)) {
-          setSalons(fallback);
-        }
+        setLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch via API, falling back...", err);
+    }
+
+    try {
+      const fallback = await getSalons({ data: {} });
+      if (fallback && Array.isArray(fallback)) {
+        setSalons(fallback);
       }
     } catch (err) {
       console.error("Failed to load salons", err);
@@ -92,7 +112,37 @@ function LiveDashboard() {
     { id: 'styling', name: 'Styling', icon: '✂️' },
   ];
 
+  const handleGoogleLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = result.user ? await result.user.getIdToken() : null;
+      if (!idToken) {
+        toast.error("Could not retrieve Google ID token.");
+        setAuthLoading(false);
+        return;
+      }
+      
+      const res = await loginWithGoogleServer({ data: { idToken } });
+      try {
+        localStorage.setItem("snepr_session", JSON.stringify(res));
+      } catch {}
+      setSession(res);
+      toast.success("Successfully logged in!");
+      setShowAuthModal(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Google sign-in failed.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleJoinQueue = (salon: Salon) => {
+    if (!session) {
+      setShowAuthModal(true);
+      return;
+    }
     setActiveQueue({
       salonName: salon.name,
       position: (salon.waitingCount || 0) + 1,
@@ -149,9 +199,23 @@ function LiveDashboard() {
             <span className="text-[10px] text-[#7A4B29] bg-[#7A4B29]/10 px-2 py-0.5 rounded-full font-black uppercase">Change</span>
           </button>
 
-          <div className="hidden sm:flex items-center gap-2 bg-[#7A4B29] text-white px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide">
-            <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-            <span>LIVE QUEUES</span>
+          <div className="flex items-center gap-3">
+            {session ? (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-[#E8E2D9] bg-[#FAF7F2] text-xs font-bold text-[#7A4B29]">
+                👤 {session.name || "Customer"}
+              </span>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="text-xs font-black uppercase tracking-wider text-[#7A4B29] hover:underline cursor-pointer px-3 py-1.5"
+              >
+                Login
+              </button>
+            )}
+            <div className="hidden sm:flex items-center gap-2 bg-[#7A4B29] text-white px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wide">
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+              <span>LIVE QUEUES</span>
+            </div>
           </div>
         </div>
       </header>
@@ -444,6 +508,86 @@ function LiveDashboard() {
         onSelectManual={setManualLocation}
         isLocating={locating}
       />
+
+      {/* Dismissible Customer Login Modal */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setShowAuthModal(false)} />
+          
+          <div className="relative z-10 w-full max-w-md overflow-hidden rounded-[28px] border border-[#EFE7DC] bg-[#FAF8F5] p-8 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 p-2 text-[#9C948D] hover:text-[#1C1613]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#D4A373]/40 bg-[#D4A373]/10 px-3.5 py-1.5 text-[10px] font-bold tracking-widest text-[#7A4B29] uppercase">
+                Verification Required
+              </div>
+              <SneprWordmark height={28} color="#7A4B29" />
+              <h2 className="text-2xl font-serif font-bold text-[#1C1613] tracking-tight mt-2">
+                Join Salon Live Queue
+              </h2>
+              <p className="text-xs text-[#6E6761] leading-relaxed max-w-sm">
+                To reserve your spot, please quickly sign in with Google or continue using our Android app.
+              </p>
+            </div>
+
+            <div className="mt-8 space-y-4">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={authLoading}
+                className="w-full flex items-center justify-center gap-3 h-14 bg-[#7A4B29] hover:bg-[#60391F] text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-[#7A4B29]/20 transition-all disabled:opacity-60 cursor-pointer"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <path
+                    fill="#FFFFFF"
+                    d="M21.35 11.1H12v2.7h5.38c-.24 1.28-.96 2.37-2.05 3.1l3.12 2.42c1.82-1.68 2.87-4.15 2.87-7.07 0-.73-.07-1.42-.17-2.15z"
+                  />
+                  <path
+                    fill="#FFFFFF"
+                    d="M12 21c2.43 0 4.47-.8 5.96-2.2l-3.12-2.42c-.86.58-1.97.92-3.12.92-2.4 0-4.43-1.62-5.15-3.8L3.33 15.3c1.48 2.94 4.53 5.7 8.67 5.7z"
+                  />
+                  <path
+                    fill="#FFFFFF"
+                    d="M6.85 13.5c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72L3.33 7.8A8.99 8.99 0 0 0 2 12c0 1.57.41 3.05 1.13 4.34l3.72-2.84z"
+                  />
+                  <path
+                    fill="#FFFFFF"
+                    d="M12 5.7c1.3 0 2.47.45 3.39 1.33l2.54-2.54C16.4 3.09 14.39 2.3 12 2.3c-4.14 0-7.19 2.76-8.67 5.7l3.52 2.7c.72-2.18 2.75-3.8 5.15-3.8z"
+                  />
+                </svg>
+                {authLoading ? "Connecting..." : "Sign In with Google"}
+              </button>
+
+              <div className="relative flex items-center justify-center py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#E5E0D8]" />
+                </div>
+                <span className="relative px-3 bg-[#FAF8F5] text-[9px] font-bold text-[#9C948D] uppercase tracking-widest">
+                  Best Experience
+                </span>
+              </div>
+
+              <a
+                href="/Snepr-v1.0.3.aab"
+                download
+                className="w-full flex items-center justify-center gap-3 h-14 bg-white hover:bg-[#FAF7F2] text-[#1C1613] font-bold text-xs uppercase tracking-widest rounded-2xl border border-[#E5E0D8] transition-all shadow-xs"
+              >
+                <Smartphone className="w-5 h-5 text-[#7A4B29]" />
+                Download Android App
+              </a>
+            </div>
+
+            <p className="mt-6 text-[10px] text-center text-[#9C948D] leading-relaxed">
+              By continuing, you agree to our Privacy Policy and Terms of Service.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
