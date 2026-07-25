@@ -52,7 +52,7 @@ export function Navbar() {
           <Link to="/" hash="how" className="transition hover:text-ink">
             How it works
           </Link>
-          <Link to="/" hash="live" className="transition hover:text-ink">
+          <Link to="/live" className="transition hover:text-ink">
             Live queue
           </Link>
           <Link to="/about" className="transition hover:text-ink">

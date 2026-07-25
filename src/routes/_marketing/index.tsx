@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_marketing/")({
 
 
 /* ------------------------------ Hero ------------------------------ */
-function Hero({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
+function Hero() {
   return (
     <section id="top" className="relative overflow-hidden px-4 pb-10 pt-8 sm:px-6 sm:pt-14 md:pt-20">
       <div className="mx-auto grid max-w-6xl gap-10 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-14">
@@ -55,7 +55,6 @@ function Hero({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void 
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link 
               to="/live" 
-              onClick={onInteraction}
               className="inline-flex h-14 items-center gap-2 rounded-2xl bg-primary px-6 text-[16px] font-semibold text-primary-foreground shadow-green press press-active hover:bg-primary-hover"
             >
               <MapPin className="h-5 w-5" />
@@ -120,17 +119,17 @@ function HeroQueueCard() {
   const topSalon = salons[0] || { name: "Urban Look Salon", waitTime: 15 };
 
   return (
-    <div className="rise-in relative mx-auto w-full max-w-md">
+    <Link to="/live" className="rise-in relative mx-auto w-full max-w-md block group cursor-pointer hover:no-underline">
       {/* Ambient green blob */}
       <div
         aria-hidden
-        className="absolute -inset-6 -z-10 rounded-[40px] bg-primary/10 blur-2xl"
+        className="absolute -inset-6 -z-10 rounded-[40px] bg-primary/10 blur-2xl group-hover:bg-primary/20 transition-all"
       />
-      <div className="rounded-[28px] border border-border bg-card p-4 shadow-elevated sm:p-5">
+      <div className="rounded-[28px] border border-border bg-card p-4 shadow-elevated sm:p-5 hover:shadow-hover border-border/80 hover:border-primary/25 transition-all">
         {/* Search bar */}
-        <div className="flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-3">
-          <Search className="h-4 w-4 text-ink-soft" />
-          <span className="text-[13.5px] text-ink-soft">Salons near Bhubaneswar</span>
+        <div className="flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-3 group-hover:bg-primary/5 transition-all">
+          <Search className="h-4 w-4 text-ink-soft group-hover:text-primary" />
+          <span className="text-[13.5px] text-ink-soft group-hover:text-ink">Salons near Bhubaneswar</span>
           <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10.5px] font-semibold text-primary">
             LIVE
           </span>
@@ -179,11 +178,11 @@ function HeroQueueCard() {
           )}
         </div>
 
-        <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-4 py-3">
+        <div className="mt-4 flex items-center justify-between rounded-2xl bg-ink px-4 py-3 group-hover:bg-primary transition-all">
           <div className="text-[12.5px] font-medium text-white/70">
             Fastest chair right now
           </div>
-          <div className="font-mono-tabular text-[15px] font-bold text-primary">
+          <div className="font-mono-tabular text-[15px] font-bold text-primary group-hover:text-white transition-all">
             {topSalon.waitTime || 5} min · {topSalon.name}
           </div>
         </div>
@@ -199,7 +198,7 @@ function HeroQueueCard() {
 }
 
 /* --------------------------- How it works --------------------------- */
-function HowItWorks({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
+function HowItWorks() {
   const steps = [
     {
       n: "01",
@@ -211,7 +210,7 @@ function HowItWorks({ onInteraction }: { onInteraction: (e: React.MouseEvent) =>
       n: "02",
       title: "Join the queue",
       copy: "Tap once. Your spot is locked in from anywhere.",
-      preview: <MiniJoin onInteraction={onInteraction} />,
+      preview: <MiniJoin />,
     },
     {
       n: "03",
@@ -287,7 +286,7 @@ function MiniSeeWait() {
   );
 }
 
-function MiniJoin({ onInteraction }: { onInteraction: (e: React.MouseEvent) => void }) {
+function MiniJoin() {
   return (
     <div className="flex h-full flex-col justify-between gap-3">
       <div className="rounded-xl bg-card p-3">
@@ -300,7 +299,6 @@ function MiniJoin({ onInteraction }: { onInteraction: (e: React.MouseEvent) => v
       </div>
       <Link
         to="/live"
-        onClick={onInteraction}
         className="flex w-full items-center justify-center rounded-xl bg-primary py-2.5 text-[13px] font-bold text-primary-foreground press press-active"
       >
         Join queue
@@ -410,7 +408,7 @@ function LiveShowcase() {
               </div>
 
               <Link
-                to="/app"
+                to="/live"
                 className="mt-6 inline-flex h-12 w-fit items-center gap-2 rounded-2xl bg-primary px-5 text-[14px] font-bold text-primary-foreground press press-active hover:bg-primary-hover"
               >
                 Join the queue
