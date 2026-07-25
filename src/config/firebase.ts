@@ -4,12 +4,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // Firebase Web Configuration
 // These can be replaced with your actual keys from Firebase Console > Project Settings > General > Your Apps (Web)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyFakeKey_replace_this_with_yours",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "sneprofficial26.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "sneprofficial26",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "sneprofficial26.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "860014944083",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:860014944083:web:fakeappid",
+  apiKey: "AIzaSyDlYDbj6qHdFbVftvz5SOW4KYe1rUaEqFM",
+  authDomain: "sneprofficial26.firebaseapp.com",
+  projectId: "sneprofficial26",
+  storageBucket: "sneprofficial26.firebasestorage.app",
+  messagingSenderId: "860014944083",
+  appId: "1:860014944083:web:5e7281c92eeaa7afcd4ba6",
+  measurementId: "G-3F11GR7Z1F"
 };
 
 // Initialize Firebase
