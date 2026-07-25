@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "860014944083",
+    "project_id": "sneprofficial26",
+    "storage_bucket": "sneprofficial26.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:860014944083:android:424d33ae9fc8a169cd4ba6",
+        "android_client_info": {
+          "package_name": "in.snepr.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1W4f-6xcYp41CiVb6zymn1F-NbRYFe98"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
