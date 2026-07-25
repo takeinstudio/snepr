@@ -77,6 +77,62 @@ export const login = createServerFn({ method: "POST" })
     };
   });
 
+export const loginWithGoogleServer = createServerFn({ method: "POST" })
+  .validator((d: { idToken: string }) => d)
+  .handler(async ({ data }) => {
+    const { OAuth2Client } = await import("google-auth-library");
+    const googleClient = new OAuth2Client();
+    
+    const ticket = await googleClient.verifyIdToken({
+      idToken: data.idToken,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) throw new Error("Invalid token");
+    
+    const { email, name } = payload;
+    
+    const userResult = await db.select().from(users).where(eq(users.username, email));
+    let user = userResult[0];
+    
+    if (!user) {
+      const bcrypt = await import("bcryptjs");
+      const randomPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      const [createdUser] = await db.insert(users).values({
+        username: email,
+        password: hashedPassword,
+        name: name || "Google User",
+        role: "customer",
+      }).returning();
+      user = createdUser;
+    }
+    
+    if (user.suspendedAt) throw new Error("This account has been suspended.");
+    
+    let approvalStatus = "approved";
+    let rejectionReason: string | null = null;
+    
+    if (user.salonId) {
+      const [salon] = await db.select().from(salons).where(eq(salons.id, user.salonId));
+      if (salon) {
+        approvalStatus = salon.approvalStatus || "approved";
+        rejectionReason = salon.rejectionReason || null;
+      }
+    }
+    
+    return {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: user.role as UserRole,
+      cityId: user.cityId ?? null,
+      salonId: user.salonId ?? null,
+      approvalStatus,
+      rejectionReason,
+    };
+  });
+
 // ─── Create Any User (Super Admin) ────────────────────────────────────────────
 
 export const createUser = createServerFn({ method: "POST" })

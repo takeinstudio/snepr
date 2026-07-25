@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { db } from "./db";
 import { users, salons, queues, bookings } from "./db/schema";
+import { OAuth2Client } from "google-auth-library";
 import { eq, and, desc } from "drizzle-orm";
 
 const app = express();
@@ -11,6 +12,59 @@ app.use(cors());
 app.use(express.json());
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_secret_for_mobile_auth";
+const googleClient = new OAuth2Client();
+
+// ─── GOOGLE AUTHENTICATION ───
+app.post("/api/auth/google", async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ error: "Missing ID token" });
+    }
+
+    // Verify the token with Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken
+    });
+    
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(400).json({ error: "Invalid token payload" });
+    }
+
+    const { email, name } = payload;
+
+    // Find or create user (using email as username)
+    let userResult = await db.select().from(users).where(eq(users.username, email));
+    let user = userResult[0];
+
+    if (!user) {
+      // Create new customer user
+      const randomPassword = Math.random().toString(36).slice(-8);
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      const [createdUser] = await db.insert(users).values({
+        username: email,
+        password: hashedPassword,
+        name: name || "Google User",
+        role: "customer",
+      }).returning();
+      user = createdUser;
+    }
+
+    if (user.suspendedAt) {
+      return res.status(403).json({ error: "Account suspended" });
+    }
+
+    const sessionPayload = { id: user.id, username: user.username, role: user.role };
+    const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({ token, user: sessionPayload });
+  } catch (error: any) {
+    console.error("Google Auth Error:", error);
+    res.status(500).json({ error: error.message || "Failed to authenticate with Google" });
+  }
+});
 
 // ─── AUTHENTICATION ───
 app.post("/api/auth/login", async (req, res) => {

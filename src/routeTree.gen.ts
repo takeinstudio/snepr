@@ -17,7 +17,9 @@ import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as MarketingAboutRouteImport } from './routes/_marketing/about'
 import { Route as MarketingClaimRouteImport } from './routes/_marketing/claim'
 import { Route as MarketingContactRouteImport } from './routes/_marketing/contact'
+import { Route as MarketingDeleteAccountRouteImport } from './routes/_marketing/delete-account'
 import { Route as MarketingFaqRouteImport } from './routes/_marketing/faq'
+import { Route as MarketingPrivacyRouteImport } from './routes/_marketing/privacy'
 import { Route as MarketingPrivacyPolicyRouteImport } from './routes/_marketing/privacy-policy'
 import { Route as MarketingTermsOfServiceRouteImport } from './routes/_marketing/terms-of-service'
 import { Route as AppIndexRouteImport } from './routes/app/index'
@@ -73,9 +75,19 @@ const MarketingContactRoute = MarketingContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingDeleteAccountRoute = MarketingDeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
+  getParentRoute: () => MarketingRoute,
+} as any)
 const MarketingFaqRoute = MarketingFaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => MarketingRoute,
+} as any)
+const MarketingPrivacyRoute = MarketingPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingPrivacyPolicyRoute = MarketingPrivacyPolicyRouteImport.update({
@@ -162,7 +174,9 @@ export interface FileRoutesByFullPath {
   '/about': typeof MarketingAboutRoute
   '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
+  '/delete-account': typeof MarketingDeleteAccountRoute
   '/faq': typeof MarketingFaqRoute
+  '/privacy': typeof MarketingPrivacyRoute
   '/privacy-policy': typeof MarketingPrivacyPolicyRoute
   '/terms-of-service': typeof MarketingTermsOfServiceRoute
   '/app/activity': typeof AppActivityRoute
@@ -184,7 +198,9 @@ export interface FileRoutesByTo {
   '/about': typeof MarketingAboutRoute
   '/claim': typeof MarketingClaimRoute
   '/contact': typeof MarketingContactRoute
+  '/delete-account': typeof MarketingDeleteAccountRoute
   '/faq': typeof MarketingFaqRoute
+  '/privacy': typeof MarketingPrivacyRoute
   '/privacy-policy': typeof MarketingPrivacyPolicyRoute
   '/terms-of-service': typeof MarketingTermsOfServiceRoute
   '/app/activity': typeof AppActivityRoute
@@ -211,7 +227,9 @@ export interface FileRoutesById {
   '/_marketing/about': typeof MarketingAboutRoute
   '/_marketing/claim': typeof MarketingClaimRoute
   '/_marketing/contact': typeof MarketingContactRoute
+  '/_marketing/delete-account': typeof MarketingDeleteAccountRoute
   '/_marketing/faq': typeof MarketingFaqRoute
+  '/_marketing/privacy': typeof MarketingPrivacyRoute
   '/_marketing/privacy-policy': typeof MarketingPrivacyPolicyRoute
   '/_marketing/terms-of-service': typeof MarketingTermsOfServiceRoute
   '/app/activity': typeof AppActivityRoute
@@ -239,7 +257,9 @@ export interface FileRouteTypes {
     | '/about'
     | '/claim'
     | '/contact'
+    | '/delete-account'
     | '/faq'
+    | '/privacy'
     | '/privacy-policy'
     | '/terms-of-service'
     | '/app/activity'
@@ -261,7 +281,9 @@ export interface FileRouteTypes {
     | '/about'
     | '/claim'
     | '/contact'
+    | '/delete-account'
     | '/faq'
+    | '/privacy'
     | '/privacy-policy'
     | '/terms-of-service'
     | '/app/activity'
@@ -287,7 +309,9 @@ export interface FileRouteTypes {
     | '/_marketing/about'
     | '/_marketing/claim'
     | '/_marketing/contact'
+    | '/_marketing/delete-account'
     | '/_marketing/faq'
+    | '/_marketing/privacy'
     | '/_marketing/privacy-policy'
     | '/_marketing/terms-of-service'
     | '/app/activity'
@@ -372,11 +396,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingContactRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/delete-account': {
+      id: '/_marketing/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof MarketingDeleteAccountRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/faq': {
       id: '/_marketing/faq'
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof MarketingFaqRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/privacy': {
+      id: '/_marketing/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof MarketingPrivacyRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/privacy-policy': {
@@ -491,7 +529,9 @@ interface MarketingRouteChildren {
   MarketingAboutRoute: typeof MarketingAboutRoute
   MarketingClaimRoute: typeof MarketingClaimRoute
   MarketingContactRoute: typeof MarketingContactRoute
+  MarketingDeleteAccountRoute: typeof MarketingDeleteAccountRoute
   MarketingFaqRoute: typeof MarketingFaqRoute
+  MarketingPrivacyRoute: typeof MarketingPrivacyRoute
   MarketingPrivacyPolicyRoute: typeof MarketingPrivacyPolicyRoute
   MarketingTermsOfServiceRoute: typeof MarketingTermsOfServiceRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
@@ -501,7 +541,9 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingAboutRoute: MarketingAboutRoute,
   MarketingClaimRoute: MarketingClaimRoute,
   MarketingContactRoute: MarketingContactRoute,
+  MarketingDeleteAccountRoute: MarketingDeleteAccountRoute,
   MarketingFaqRoute: MarketingFaqRoute,
+  MarketingPrivacyRoute: MarketingPrivacyRoute,
   MarketingPrivacyPolicyRoute: MarketingPrivacyPolicyRoute,
   MarketingTermsOfServiceRoute: MarketingTermsOfServiceRoute,
   MarketingIndexRoute: MarketingIndexRoute,

@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { login } from "../backend/functions/auth";
+import { login, loginWithGoogleServer } from "../backend/functions/auth";
 import { sendOtp, registerSalonWithOtp } from "../backend/functions/otp";
 import { ArrowRight, Eye, EyeOff, ShieldCheck, CheckCircle2, Building2 } from "lucide-react";
 import { SneprWordmark } from "@/components/SneprWordmark";
 import { cn } from "@/lib/utils";
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../config/firebase";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -57,6 +59,38 @@ function LoginPage() {
     },
     onError: (err: any) => setLoginError(err.message || "Invalid username or password"),
   });
+
+  // Google Login Mutation
+  const googleLoginMutation = useMutation({
+    mutationFn: (idToken: string) => loginWithGoogleServer({ data: { idToken } }),
+    onSuccess: (data) => {
+      setLoginError("");
+      try {
+        localStorage.setItem("snepr_session", JSON.stringify(data));
+      } catch {}
+      if (["super_admin", "sub_admin", "salon_owner", "staff"].includes(data.role)) {
+        navigate({ to: "/salon" });
+      } else {
+        navigate({ to: "/live" });
+      }
+    },
+    onError: (err: any) => setLoginError(err.message || "Failed to sign in with Google"),
+  });
+
+  const handleGoogleLogin = async () => {
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = result.user ? await result.user.getIdToken() : null;
+      if (!idToken) {
+        setLoginError("Could not retrieve Google ID token.");
+        return;
+      }
+      googleLoginMutation.mutate(idToken);
+    } catch (err: any) {
+      console.error(err);
+      setLoginError(err.message || "Google popup sign-in failed.");
+    }
+  };
 
   // Send OTP Mutation
   const sendOtpMutation = useMutation({
@@ -216,6 +250,42 @@ function LoginPage() {
               >
                 <ArrowRight className="w-4 h-4" />
                 {loginMutation.isPending ? "SIGNING IN…" : "SIGN IN"}
+              </button>
+
+              <div className="relative my-4 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-[#E5E0D8]" />
+                </div>
+                <span className="relative px-3 bg-[#FDFBF7] text-[10px] font-bold text-[#9C948D] uppercase tracking-widest">
+                  Or continue with
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                disabled={googleLoginMutation.isPending}
+                className="w-full h-13 bg-white hover:bg-[#FAF7F2] text-[#1C1613] font-bold text-xs uppercase tracking-widest rounded-xl border border-[#E5E0D8] flex items-center justify-center gap-2.5 transition-all disabled:opacity-60 shadow-xs"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.354 0 3.391 2.673 1.482 6.564l3.784 3.201z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.49 12.273c0-.818-.073-1.609-.209-2.373H12v4.582h6.436a5.503 5.503 0 0 1-2.382 3.6l3.727 3.127c2.182-2.009 3.709-4.964 3.709-8.936z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.266 14.235A7.09 7.09 0 0 1 4.909 12c0-.79.136-1.545.357-2.235L1.482 6.564A11.934 11.934 0 0 0 0 12c0 2.01.5 3.91 1.382 5.59l3.884-3.355z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 24c3.245 0 5.973-1.082 7.964-2.927l-3.727-3.127c-1.036.69-2.364 1.109-4.237 1.109-3.255 0-6.018-2.191-7.01-5.136l-3.884 3.355C3.127 21.227 7.155 24 12 24z"
+                  />
+                </svg>
+                {googleLoginMutation.isPending ? "Connecting..." : "Google"}
               </button>
 
               <div className="text-center pt-2">
