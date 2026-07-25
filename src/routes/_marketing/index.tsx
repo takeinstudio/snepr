@@ -628,9 +628,7 @@ function SneprLanding() {
       if (data) session = JSON.parse(data);
     } catch {}
 
-    if (session) {
-      navigate({ to: "/live" });
-    } else {
+    if (!session) {
       setShowPopup(true);
     }
   }, [navigate]);
